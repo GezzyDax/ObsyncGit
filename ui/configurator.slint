@@ -1,0 +1,117 @@
+import { VerticalBox, HorizontalBox, LineEdit, CheckBox, Button, ScrollView } from "std-widgets.slint";
+
+component FormRow inherits VerticalBox {
+    in property <string> label;
+    in-out property <string> value;
+    in property <string> placeholder;
+
+    spacing: 4px;
+    Text {
+        text: root.label;
+        color: #2f2f2f;
+    }
+    LineEdit {
+        text <=> root.value;
+        placeholder-text: root.placeholder;
+        horizontal-stretch: 1;
+    }
+}
+
+export component ConfiguratorWindow inherits Window {
+    in-out property <string> repo_url;
+    in-out property <string> branch;
+    in-out property <string> remote;
+    in-out property <string> workdir;
+    in-out property <string> author_name;
+    in-out property <string> author_email;
+    in-out property <string> ssh_key_path;
+    in-out property <bool> auto_update_enabled;
+    in-out property <string> auto_update_interval_text;
+    in-out property <string> status_text;
+
+    callback save_requested();
+    callback manual_update_requested();
+    callback exit_requested();
+
+    title: "ObsyncGit";
+    preferred-width: 520px;
+    preferred-height: 600px;
+    background: #f5f5f7;
+
+    VerticalBox {
+        padding: 16px;
+        spacing: 14px;
+
+        Text {
+            text: "ObsyncGit Control Center";
+            font-size: 22px;
+            horizontal-alignment: center;
+            color: #1f1f1f;
+        }
+
+        Rectangle {
+            background: rgba(255, 255, 255, 0.72);
+            border-radius: 14px;
+            horizontal-stretch: 1;
+            vertical-stretch: 1;
+
+            ScrollView {
+                horizontal-stretch: 1;
+                vertical-stretch: 1;
+
+                VerticalBox {
+                    padding: 20px;
+                    spacing: 18px;
+
+                    FormRow { label: "Repository URL"; value <=> root.repo_url; placeholder: "git@github.com:user/repo.git"; }
+                    FormRow { label: "Branch"; value <=> root.branch; placeholder: "main"; }
+                    FormRow { label: "Remote"; value <=> root.remote; placeholder: "origin"; }
+                    FormRow { label: "Working Directory"; value <=> root.workdir; placeholder: "/home/user/vault"; }
+                    FormRow { label: "Author Name"; value <=> root.author_name; placeholder: "Vault Sync"; }
+                    FormRow { label: "Author Email"; value <=> root.author_email; placeholder: "sync@example.com"; }
+                    FormRow { label: "SSH Key"; value <=> root.ssh_key_path; placeholder: "~/.ssh/id_ed25519"; }
+
+                    Rectangle {
+                        background: rgba(124, 77, 255, 0.08);
+                        border-radius: 12px;
+
+                        VerticalBox {
+                            padding: 14px;
+                            spacing: 10px;
+                            CheckBox {
+                                checked <=> root.auto_update_enabled;
+                                text: "Automatic updates";
+                            }
+                            FormRow { label: "Interval (hours)"; value <=> root.auto_update_interval_text; placeholder: "24"; }
+                        }
+                    }
+                }
+            }
+        }
+
+        Text {
+            text: root.status_text;
+            color: #3a3a3c;
+            font-size: 12px;
+            horizontal-alignment: center;
+        }
+
+        HorizontalBox {
+            spacing: 12px;
+            Button {
+                text: "Save";
+                enabled: root.repo_url != "" && root.workdir != "";
+                primary: true;
+                clicked => root.save_requested();
+            }
+            Button {
+                text: "Manual Update";
+                clicked => root.manual_update_requested();
+            }
+            Button {
+                text: "Exit";
+                clicked => root.exit_requested();
+            }
+        }
+    }
+}
