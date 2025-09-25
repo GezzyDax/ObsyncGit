@@ -163,10 +163,10 @@ install_linux_runtime_deps() {
     return
   fi
 
-  local sudo_cmd=""
+  SUDO_CMD=""
   if [ "$(id -u)" -ne 0 ]; then
     if command -v sudo >/dev/null 2>&1; then
-      sudo_cmd="sudo"
+      SUDO_CMD="sudo"
     else
       echo "Install GUI dependencies manually (requires root): gtk3, libayatana-appindicator, xdotool"
       return
@@ -174,8 +174,8 @@ install_linux_runtime_deps() {
   fi
 
   install_cmd() {
-    if [ -n "$sudo_cmd" ]; then
-      "$sudo_cmd" "$@"
+    if [ -n "$SUDO_CMD" ]; then
+      "$SUDO_CMD" "$@"
     else
       "$@"
     fi
@@ -230,7 +230,7 @@ for f in "$TMPDIR"/obsyncgit*; do
     install_file "$f"
     FOUND_BINARIES=$((FOUND_BINARIES + 1))
     case "$(basename "$f")" in
-      obsyncgit-gui*|obsyncgit-gui.*)
+      obsyncgit-gui*)
         GUI_INSTALLED=1
         ;;
     esac
