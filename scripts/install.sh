@@ -1,5 +1,10 @@
 #!/usr/bin/env sh
-set -euo pipefail
+set -eu
+
+# Enable pipefail where supported (dash does not provide it).
+if (set -o pipefail) 2>/dev/null; then
+  set -o pipefail
+fi
 
 REPO="GezzyDax/ObsyncGit"
 PROJECT="obsyncgit"
@@ -130,22 +135,23 @@ if [ ! -d "$INSTALL_DIR" ]; then
   fi
 fi
 
-INSTALL_CMD="install -m 755 \"$BINARY_PATH\" \"$INSTALL_DIR/$PROJECT\""
+DEST_PATH="$INSTALL_DIR/$PROJECT"
+
 if [ -w "$INSTALL_DIR" ]; then
-  sh -c "$INSTALL_CMD"
+  install -m 755 "$BINARY_PATH" "$DEST_PATH"
 else
   if command -v sudo >/dev/null 2>&1; then
     echo "Using sudo to install into $INSTALL_DIR"
-    sudo sh -c "$INSTALL_CMD"
+    sudo install -m 755 "$BINARY_PATH" "$DEST_PATH"
   else
     echo "Insufficient permissions to write to $INSTALL_DIR" >&2
     exit 1
   fi
 fi
 
-INSTALLED_VERSION="$($INSTALL_DIR/$PROJECT --version 2>/dev/null || true)"
+INSTALLED_VERSION="$("$DEST_PATH" --version 2>/dev/null || true)"
 
-echo "Installed $PROJECT to $INSTALL_DIR/$PROJECT"
+echo "Installed $PROJECT to $DEST_PATH"
 [ -n "$INSTALLED_VERSION" ] && echo "$INSTALLED_VERSION"
 
 echo "Add $INSTALL_DIR to your PATH if it is not already there."
