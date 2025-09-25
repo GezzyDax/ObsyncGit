@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 $repo = 'GezzyDax/ObsyncGit'
 $project = 'obsyncgit'
-$target = 'x86_64-pc-windows-msvc'
+$assetName = 'obsyncgit-windows-x86_64.zip'
 $pathUpdated = $false
 
 if (-not $Version) {
@@ -25,17 +25,17 @@ if ($arch -ne [System.Runtime.InteropServices.Architecture]::X64) {
 }
 
 if ($Version -eq 'latest') {
-    $downloadUrl = "https://github.com/$repo/releases/latest/download/$project-$target.zip"
+    $downloadUrl = "https://github.com/$repo/releases/latest/download/$assetName"
 } else {
     if ($Version -notmatch '^v') {
         $Version = "v$Version"
     }
-    $downloadUrl = "https://github.com/$repo/releases/download/$Version/$project-$target.zip"
+    $downloadUrl = "https://github.com/$repo/releases/download/$Version/$assetName"
 }
 
 $temporaryDir = New-Item -ItemType Directory -Path ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString()))
 try {
-    $archivePath = Join-Path $temporaryDir.FullName "$project-$target.zip"
+    $archivePath = Join-Path $temporaryDir.FullName $assetName
     Write-Host "Downloading $downloadUrl"
     Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
 
