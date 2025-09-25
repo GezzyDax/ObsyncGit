@@ -185,10 +185,10 @@ impl GitFacade {
             .context("failed to inspect git stash after push")?;
 
         for line in list.stdout.lines() {
-            if let Some((stash_ref, message)) = line.split_once(':') {
-                if message.trim() == STASH_MESSAGE {
-                    return Ok(Some(stash_ref.trim().to_string()));
-                }
+            if let Some((stash_ref, message)) = line.split_once(':')
+                && message.trim() == STASH_MESSAGE
+            {
+                return Ok(Some(stash_ref.trim().to_string()));
             }
         }
 
