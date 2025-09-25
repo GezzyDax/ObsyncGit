@@ -1,4 +1,4 @@
-# git-syncd
+# ObsyncGit
 
 Lightweight watcher daemon that keeps a working tree in sync with a remote Git repository. It runs in the background, turns local edits into small commits, and periodically pulls remote changes made on your other machines.
 
@@ -13,24 +13,24 @@ Lightweight watcher daemon that keeps a working tree in sync with a remote Git r
 ## Build & Run
 ```bash
 cargo build --release
-./target/release/git-syncd --config /path/to/config.yaml
+./target/release/obsyncgit --config /path/to/config.yaml
 ```
 
 To run once (for testing) simply stop with `Ctrl+C`. The daemon shuts down cleanly.
 
 ### Install as a systemd user service (Linux)
-1. Copy the release binary somewhere on your `$PATH`, e.g. `~/.local/bin/git-syncd`.
+1. Copy the release binary somewhere on your `$PATH`, e.g. `~/.local/bin/obsyncgit`.
 2. Copy the supplied unit file and adjust the paths:
-   - `cp examples/git-syncd.service ~/.config/systemd/user/`
+   - `cp examples/obsyncgit.service ~/.config/systemd/user/`
    - edit the `ExecStart` and `WorkingDirectory` lines.
 3. Reload and enable:
    ```bash
    systemctl --user daemon-reload
-   systemctl --user enable --now git-syncd.service
+   systemctl --user enable --now obsyncgit.service
    ```
-4. Inspect logs with `journalctl --user -u git-syncd -f`.
+4. Inspect logs with `journalctl --user -u obsyncgit -f`.
 
-macOS users can adapt the binary for `launchd` (see `examples/git-syncd.plist`) and Windows users can register it through Task Scheduler or `nssm`.
+macOS users can adapt the binary for `launchd` (see `examples/obsyncgit.plist`) and Windows users can register it through Task Scheduler or `nssm`.
 
 ## Configuration
 Create a YAML file (see `config.example.yaml` in the repo). All paths must be absolute.
@@ -76,7 +76,7 @@ Field notes:
 - Git commands run with `GIT_TERMINAL_PROMPT=0`, so configure SSH keys/credentials beforehand.
 
 ## Troubleshooting
-- Run with `GIT_SYNCD_LOG=debug` to see every git invocation.
+- Run with `OBSYNCGIT_LOG=debug` to see every git invocation.
 - Ensure the repository has sane permissions; the daemon does not sudo or elevate.
 - Large binary files should be excluded with `.gitignore` or added to `ignore.globs`.
 

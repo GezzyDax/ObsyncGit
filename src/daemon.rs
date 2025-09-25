@@ -38,7 +38,7 @@ impl SyncDaemon {
     }
 
     pub fn run(mut self) -> Result<()> {
-        info!(path = %self.config.workdir, "starting git-syncd daemon");
+        info!(path = %self.config.workdir, "starting ObsyncGit daemon");
 
         let shutdown = self.shutdown.clone();
         ctrlc::set_handler(move || {
@@ -110,33 +110,33 @@ impl SyncDaemon {
         while !self.shutdown.load(Ordering::SeqCst) {
             let now = Instant::now();
 
-            if let Some(until) = backoff_until {
-                if now >= until {
-                    backoff_until = None;
-                    debug!("backoff window elapsed, resuming operations");
-                }
+            if let Some(until) = backoff_until
+                && now >= until
+            {
+                backoff_until = None;
+                debug!("backoff window elapsed, resuming operations");
             }
 
             if backoff_until.is_none() {
-                if let Some(dirty_at) = dirty_since {
-                    if now.duration_since(dirty_at) >= debounce {
-                        match self.sync_once() {
-                            Ok(changed) => {
-                                if changed {
-                                    info!("local changes synchronized");
-                                }
-                                dirty_since = None;
-                                backoff_step = 0;
-                                last_poll = Instant::now();
-                                continue;
+                if let Some(dirty_at) = dirty_since
+                    && now.duration_since(dirty_at) >= debounce
+                {
+                    match self.sync_once() {
+                        Ok(changed) => {
+                            if changed {
+                                info!("local changes synchronized");
                             }
-                            Err(err) => {
-                                error!(?err, "synchronization failed");
-                                backoff_step = (backoff_step + 1).min(6);
-                                let backoff = backoff_delay(backoff_step);
-                                backoff_until = Some(Instant::now() + backoff);
-                                continue;
-                            }
+                            dirty_since = None;
+                            backoff_step = 0;
+                            last_poll = Instant::now();
+                            continue;
+                        }
+                        Err(err) => {
+                            error!(?err, "synchronization failed");
+                            backoff_step = (backoff_step + 1).min(6);
+                            let backoff = backoff_delay(backoff_step);
+                            backoff_until = Some(Instant::now() + backoff);
+                            continue;
                         }
                     }
                 }
@@ -187,7 +187,7 @@ impl SyncDaemon {
             }
         }
 
-        info!("git-syncd shutting down");
+        info!("ObsyncGit shutting down");
         Ok(())
     }
 

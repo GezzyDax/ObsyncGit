@@ -1,0 +1,14 @@
+[Unit]
+Description=ObsyncGit vault synchronizer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/user/.local/bin/obsyncgit --config /home/user/.config/obsyncgit/config.yaml
+WorkingDirectory=/home/user/Obsidian
+Restart=always
+RestartSec=5
+Environment=OBSYNCGIT_LOG=info
+
+[Install]
+WantedBy=default.target

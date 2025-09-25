@@ -68,13 +68,15 @@ impl Config {
             return Ok((cfg, path));
         }
 
-        if let Ok(env_path) = std::env::var("GIT_SYNCD_CONFIG") {
+        if let Ok(env_path) =
+            std::env::var("OBSYNCGIT_CONFIG").or_else(|_| std::env::var("GIT_SYNCD_CONFIG"))
+        {
             let utf_path = Utf8PathBuf::from(env_path);
             let cfg = Self::load_from_path(&utf_path)?;
             return Ok((cfg, utf_path));
         }
 
-        let project_dirs = ProjectDirs::from("dev", "git-syncd", "git-syncd")
+        let project_dirs = ProjectDirs::from("dev", "ObsyncGit", "ObsyncGit")
             .context("cannot determine default config directory")?;
         let default_path =
             Utf8PathBuf::from_path_buf(project_dirs.config_dir().join("config.yaml"))
@@ -146,20 +148,10 @@ impl Default for SelfUpdateConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default)]
 pub struct GitOptions {
     pub executable: Option<String>,
     pub author_name: Option<String>,
     pub author_email: Option<String>,
-}
-
-impl Default for GitOptions {
-    fn default() -> Self {
-        Self {
-            executable: None,
-            author_name: None,
-            author_email: None,
-        }
-    }
 }

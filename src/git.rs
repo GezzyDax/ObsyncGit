@@ -111,10 +111,10 @@ impl GitFacade {
     }
 
     pub fn checkout_branch(&self) -> Result<()> {
-        if let Ok(output) = self.run_git(&["rev-parse", "--abbrev-ref", "HEAD"], false) {
-            if output.stdout.trim() == self.branch {
-                return Ok(());
-            }
+        if let Ok(output) = self.run_git(&["rev-parse", "--abbrev-ref", "HEAD"], false)
+            && output.stdout.trim() == self.branch
+        {
+            return Ok(());
         }
 
         if let Err(err) = self.run_git(&["checkout", &self.branch], false) {

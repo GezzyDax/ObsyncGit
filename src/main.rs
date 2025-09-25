@@ -8,6 +8,9 @@ use camino::Utf8PathBuf;
 use config::Config;
 use daemon::SyncDaemon;
 
+const BIN_NAME: &str = env!("CARGO_BIN_NAME");
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+
 fn main() -> Result<()> {
     let config_path = parse_args()?;
     init_logging();
@@ -35,7 +38,7 @@ fn parse_args() -> Result<Option<Utf8PathBuf>> {
                 std::process::exit(0);
             }
             "--version" | "-V" => {
-                println!("git-syncd {}", env!("CARGO_PKG_VERSION"));
+                println!("{APP_NAME} {}", env!("CARGO_PKG_VERSION"));
                 std::process::exit(0);
             }
             other => {
@@ -50,7 +53,8 @@ fn parse_args() -> Result<Option<Utf8PathBuf>> {
 fn init_logging() {
     use tracing_subscriber::EnvFilter;
 
-    let filter = std::env::var("GIT_SYNCD_LOG")
+    let filter = std::env::var("OBSYNCGIT_LOG")
+        .or_else(|_| std::env::var("GIT_SYNCD_LOG"))
         .or_else(|_| std::env::var("RUST_LOG"))
         .unwrap_or_else(|_| "info".to_string());
 
@@ -66,8 +70,8 @@ fn init_logging() {
 }
 
 fn print_help() {
-    println!("git-syncd - lightweight git-based folder synchronizer");
-    println!("\nUSAGE:\n    git-syncd [OPTIONS]\n");
+    println!("{APP_NAME} - lightweight git-based folder synchronizer");
+    println!("\nUSAGE:\n    {BIN_NAME} [OPTIONS]\n");
     println!("OPTIONS:");
     println!("    -c, --config <PATH>    Path to configuration YAML file");
     println!("    -h, --help             Show this help message");
