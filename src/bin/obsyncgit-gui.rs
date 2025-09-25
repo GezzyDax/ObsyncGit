@@ -6,7 +6,9 @@ use std::time::SystemTime;
 use anyhow::{Context, Result, anyhow};
 use camino::Utf8PathBuf;
 use obsyncgit::config::Config;
-use slint::{CloseRequestResponse, ComponentHandle};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use slint::CloseRequestResponse;
+use slint::ComponentHandle;
 
 slint::include_modules!();
 
@@ -173,6 +175,7 @@ fn set_status(ui: &ConfiguratorWindow, message: impl Into<String>) {
     ui.set_status_text(message.into().into());
 }
 
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn setup_tray(window: &ConfiguratorWindow) -> Result<()> {
     use tray_icon::menu::{Menu, MenuEvent, MenuItem};
     use tray_icon::{TrayIconBuilder, TrayIconEvent};
@@ -243,6 +246,13 @@ fn setup_tray(window: &ConfiguratorWindow) -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn setup_tray(_window: &ConfiguratorWindow) -> Result<()> {
+    tracing::warn!("Tray icon support is currently unavailable on this platform");
+    Ok(())
+}
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 fn load_tray_icon() -> Result<tray_icon::Icon> {
     let bytes = include_bytes!("../../assets/tray-icon.png");
     let image = image::load_from_memory(bytes)?.to_rgba8();

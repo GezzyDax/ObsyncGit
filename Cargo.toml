@@ -15,8 +15,8 @@ path = "src/lib.rs"
 default = []
 gui = [
     "dep:slint",
-    "dep:tray-icon",
     "dep:image",
+    # Platform-specific tray icon support is wired in via target dependencies.
 ]
 
 [dependencies]
