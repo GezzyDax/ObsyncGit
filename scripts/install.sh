@@ -1,11 +1,6 @@
 #!/usr/bin/env sh
 set -eu
 
-# Enable pipefail where supported (dash does not provide it).
-if (set -o pipefail) 2>/dev/null; then
-  set -o pipefail
-fi
-
 REPO="GezzyDax/ObsyncGit"
 PROJECT="obsyncgit"
 DEFAULT_INSTALL_DIR="/usr/local/bin"
