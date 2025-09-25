@@ -52,11 +52,23 @@ done
 uname_s="$(uname -s)"
 uname_m="$(uname -m)"
 
+ASSET_EXT="tar.gz"
+OS_ID=""
+ARCH_ID=""
+
 case "$uname_s" in
   Linux)
+    OS_ID="linux"
     case "$uname_m" in
       x86_64|amd64)
-        TARGET="x86_64-unknown-linux-gnu"
+        ARCH_ID="x86_64"
+        ;;
+      aarch64|arm64)
+        ARCH_ID="aarch64"
+        ;;
+      armv7l|armv7*)
+        echo "32-bit ARM Linux builds are not yet supported" >&2
+        exit 1
         ;;
       *)
         echo "Unsupported Linux architecture: $uname_m" >&2
@@ -65,12 +77,13 @@ case "$uname_s" in
     esac
     ;;
   Darwin)
+    OS_ID="macos"
     case "$uname_m" in
       x86_64)
-        TARGET="x86_64-apple-darwin"
+        ARCH_ID="x86_64"
         ;;
       arm64)
-        TARGET="aarch64-apple-darwin"
+        ARCH_ID="arm64"
         ;;
       *)
         echo "Unsupported macOS architecture: $uname_m" >&2
@@ -82,10 +95,9 @@ case "$uname_s" in
     echo "Unsupported operating system: $uname_s" >&2
     exit 1
     ;;
- esac
+esac
 
-ASSET_EXT="tar.gz"
-ASSET_NAME="$PROJECT-$TARGET.$ASSET_EXT"
+ASSET_NAME="$PROJECT-$OS_ID-$ARCH_ID.$ASSET_EXT"
 
 if [ "$VERSION" = "latest" ]; then
   DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/$ASSET_NAME"

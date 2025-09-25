@@ -9,8 +9,14 @@ $ErrorActionPreference = 'Stop'
 
 $repo = 'GezzyDax/ObsyncGit'
 $project = 'obsyncgit'
-$target = 'x86_64-pc-windows-msvc'
 $pathUpdated = $false
+
+$arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+switch ($arch) {
+    ([System.Runtime.InteropServices.Architecture]::X64) { $assetName = 'obsyncgit-windows-x86_64.zip' }
+    ([System.Runtime.InteropServices.Architecture]::Arm64) { $assetName = 'obsyncgit-windows-arm64.zip' }
+    default { throw "Unsupported Windows architecture: $arch" }
+}
 
 if (-not $Version) {
     $Version = 'latest'
@@ -19,23 +25,18 @@ if (-not $InstallDir) {
     $InstallDir = Join-Path (Join-Path $env:LOCALAPPDATA 'ObsyncGit') 'bin'
 }
 
-$arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
-if ($arch -ne [System.Runtime.InteropServices.Architecture]::X64) {
-    throw "Unsupported Windows architecture: $arch"
-}
-
 if ($Version -eq 'latest') {
-    $downloadUrl = "https://github.com/$repo/releases/latest/download/$project-$target.zip"
+    $downloadUrl = "https://github.com/$repo/releases/latest/download/$assetName"
 } else {
     if ($Version -notmatch '^v') {
         $Version = "v$Version"
     }
-    $downloadUrl = "https://github.com/$repo/releases/download/$Version/$project-$target.zip"
+    $downloadUrl = "https://github.com/$repo/releases/download/$Version/$assetName"
 }
 
 $temporaryDir = New-Item -ItemType Directory -Path ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString()))
 try {
-    $archivePath = Join-Path $temporaryDir.FullName "$project-$target.zip"
+    $archivePath = Join-Path $temporaryDir.FullName $assetName
     Write-Host "Downloading $downloadUrl"
     Invoke-WebRequest -Uri $downloadUrl -OutFile $archivePath -UseBasicParsing
 
