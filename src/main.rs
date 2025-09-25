@@ -1,20 +1,14 @@
-mod config;
-mod daemon;
-mod git;
-mod ignore;
-mod updater;
-
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 
 use anyhow::{Context, Result, bail};
 use camino::Utf8PathBuf;
 use clap::{Parser, Subcommand};
-use config::{CommitConfig, Config, GitOptions, IgnoreConfig, SelfUpdateConfig};
-use daemon::SyncDaemon;
 use directories::BaseDirs;
+use obsyncgit::config::{CommitConfig, Config, GitOptions, IgnoreConfig, SelfUpdateConfig};
+use obsyncgit::daemon::SyncDaemon;
+use obsyncgit::updater::SelfUpdateManager;
 use tracing::{info, warn};
-use updater::SelfUpdateManager;
 
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
 
@@ -69,6 +63,7 @@ enum SettingsKey {
     SelfUpdateEnabled,
     SelfUpdateIntervalHours,
     SelfUpdateCommand,
+    GitSshKeyPath,
 }
 
 impl FromStr for SettingsKey {
@@ -85,6 +80,7 @@ impl FromStr for SettingsKey {
                 Ok(Self::SelfUpdateIntervalHours)
             }
             "self-update.command" | "self-update-command" => Ok(Self::SelfUpdateCommand),
+            "git.ssh-key" | "git.ssh-key-path" | "ssh-key" => Ok(Self::GitSshKeyPath),
             other => Err(format!("unknown configuration key: {other}")),
         }
     }
@@ -198,6 +194,14 @@ fn apply_setting(config: &mut Config, key: SettingsKey, value: &str) -> Result<(
                 config.self_update.command = None;
             } else {
                 config.self_update.command = Some(cleaned.to_string());
+            }
+        }
+        SettingsKey::GitSshKeyPath => {
+            let cleaned = value.trim();
+            if cleaned.is_empty() || cleaned.eq_ignore_ascii_case("none") {
+                config.git.ssh_key_path = None;
+            } else {
+                config.git.ssh_key_path = Some(cleaned.to_string());
             }
         }
     }
