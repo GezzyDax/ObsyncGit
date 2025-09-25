@@ -44,6 +44,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 3. After review, maintainers merge the release PR. release-please creates the git tag and GitHub Release, which in turn triggers `Release` workflow to publish binaries for Linux, macOS, and Windows.
 4. Finally, merge the release PR back into `develop` (usually by fast-forwarding `develop` to `main`) to keep branches in sync.
 
+> **Maintainers:** The `Release Please` workflow requires a classic personal access token (PAT) with `repo` scope stored as the `RELEASE_PLEASE_TOKEN` secret. This bypasses GitHub's restriction on workflows creating pull requests. Generate the PAT from your account and add it under *Settings → Secrets → Actions*.
+
 ## Development environment
 
 - Rust stable toolchain (configured automatically in CI via `dtolnay/rust-toolchain@v1`).
