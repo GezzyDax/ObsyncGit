@@ -1,0 +1,24 @@
+name: Enforce Main PR Policy
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - main
+
+jobs:
+  guard:
+    name: Block direct PRs to main
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Ensure source branch is allowed
+        run: |
+          branch="${{ github.head_ref }}"
+          if [[ "$branch" == "develop" || "$branch" == release-please--* ]]; then
+            echo "PR from $branch is allowed."
+            exit 0
+          fi
+          echo "::error::Pull requests into main must come from develop or release-please automation." >&2
+          exit 1
