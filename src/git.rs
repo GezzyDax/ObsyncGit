@@ -152,6 +152,56 @@ impl GitFacade {
         Ok(())
     }
 
+    fn worktree_status(&self) -> Result<String> {
+        let status = self.run_git(&["status", "--porcelain"], false)?;
+        Ok(status.stdout)
+    }
+
+    fn is_worktree_clean(&self) -> Result<bool> {
+        Ok(self.worktree_status()?.trim().is_empty())
+    }
+
+    fn ensure_autostash(&self) -> Result<Option<String>> {
+        if self.is_worktree_clean()? {
+            return Ok(None);
+        }
+
+        const STASH_MESSAGE: &str = "obsyncgit-autostash";
+
+        self.run_git(
+            &[
+                "stash",
+                "push",
+                "--include-untracked",
+                "--message",
+                STASH_MESSAGE,
+            ],
+            false,
+        )
+        .context("failed to stash local changes before pull --rebase")?;
+
+        let list = self
+            .run_git(&["stash", "list", "--format=%gd:%gs"], false)
+            .context("failed to inspect git stash after push")?;
+
+        for line in list.stdout.lines() {
+            if let Some((stash_ref, message)) = line.split_once(':') {
+                if message.trim() == STASH_MESSAGE {
+                    return Ok(Some(stash_ref.trim().to_string()));
+                }
+            }
+        }
+
+        // Fallback: assume newest stash (stash@{0}) belongs to us.
+        Ok(Some("stash@{0}".to_string()))
+    }
+
+    fn pop_stash(&self, stash_ref: &str) {
+        if let Err(err) = self.run_git(&["stash", "pop", stash_ref], false) {
+            warn!(?err, "failed to restore stash after pull --rebase");
+        }
+    }
+
     pub fn commit(&self, message: &str) -> Result<bool> {
         let status = self.run_git(&["status", "--short"], false)?;
         if status.stdout.trim().is_empty() {
@@ -162,11 +212,22 @@ impl GitFacade {
     }
 
     pub fn pull_rebase(&self) -> Result<()> {
-        match self.run_git(&["pull", "--rebase", &self.remote, &self.branch], false) {
-            Ok(_) => Ok(()),
+        let autostash = self.ensure_autostash()?;
+        let result = self.run_git(&["pull", "--rebase", &self.remote, &self.branch], false);
+
+        match result {
+            Ok(_) => {
+                if let Some(stash_ref) = autostash {
+                    self.pop_stash(&stash_ref);
+                }
+                Ok(())
+            }
             Err(err) => {
                 warn!(?err, "git pull --rebase failed, attempting to abort rebase");
                 let _ = self.run_git(&["rebase", "--abort"], false);
+                if let Some(stash_ref) = autostash {
+                    self.pop_stash(&stash_ref);
+                }
                 Err(err)
             }
         }
