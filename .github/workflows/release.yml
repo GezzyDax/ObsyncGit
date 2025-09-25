@@ -51,6 +51,12 @@ jobs:
             artifact_name: obsyncgit-windows-x86_64.zip
             linker: ""
             ar: ""
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            artifact_ext: zip
+            artifact_name: obsyncgit-windows-arm64.zip
+            linker: ""
+            ar: ""
 
     steps:
       - name: Checkout

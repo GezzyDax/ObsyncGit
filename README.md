@@ -152,6 +152,7 @@ Pushing a tag matching `v*` triggers the `release` GitHub Actions workflow. It n
 - macOS Intel (`obsyncgit-macos-x86_64.tar.gz`)
 - macOS Apple Silicon (`obsyncgit-macos-arm64.tar.gz`)
 - Windows x86_64 (`obsyncgit-windows-x86_64.zip`)
+- Windows ARM64 (`obsyncgit-windows-arm64.zip`)
 
 Both the cross-platform installers (`install.sh` / `install.ps1`) and the in-app self-updater pull these assets directly, so keep the `obsyncgit-<target>.<ext>` naming if you add more targets.
 
