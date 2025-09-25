@@ -10,13 +10,49 @@ Lightweight watcher daemon that keeps a working tree in sync with a remote Git r
 - Configurable ignore globs so editor caches and similar junk stay out of Git.
 - Emits compact structured logs via `tracing`.
 
-## Build & Run
+## Installation
+
+### Linux & macOS (curl | sh)
+
 ```bash
-cargo build --release
-./target/release/obsyncgit --config /path/to/config.yaml
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/GezzyDax/ObsyncGit/main/scripts/install.sh)"
 ```
 
-To run once (for testing) simply stop with `Ctrl+C`. The daemon shuts down cleanly.
+The installer auto-detects your platform (x86_64 Linux, Intel macOS, or Apple Silicon macOS) and installs the latest release into `/usr/local/bin` by default. Override the target version or destination with environment variables:
+
+```bash
+OBSYNCGIT_VERSION=v1.2.3 OBSYNCGIT_INSTALL_DIR=$HOME/.local/bin \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/GezzyDax/ObsyncGit/main/scripts/install.sh)"
+```
+
+### Windows (PowerShell)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/GezzyDax/ObsyncGit/main/scripts/install.ps1 | iex"
+```
+
+By default this installs the binary into `%LOCALAPPDATA%\ObsyncGit\bin` and makes sure the folder is on your user `PATH`. Set `OBSYNCGIT_VERSION` or `OBSYNCGIT_INSTALL_DIR` beforehand to customise the release tag or destination.
+
+### Build from source
+
+```bash
+cargo build --release
+cp target/release/obsyncgit ~/.local/bin/
+```
+
+### Quick start
+
+```bash
+# 1. Create a starter configuration (overwrites with --force)
+obsyncgit install
+
+# 2. Edit the printed path and fill in repo_url / workdir
+
+# 3. Launch the daemon
+obsyncgit run
+```
+
+To stop the daemon press `Ctrl+C`; it shuts down cleanly.
 
 ### Install as a systemd user service (Linux)
 1. Copy the release binary somewhere on your `$PATH`, e.g. `~/.local/bin/obsyncgit`.
@@ -33,7 +69,21 @@ To run once (for testing) simply stop with `Ctrl+C`. The daemon shuts down clean
 macOS users can adapt the binary for `launchd` (see `examples/obsyncgit.plist`) and Windows users can register it through Task Scheduler or `nssm`.
 
 ## Configuration
-Create a YAML file (see `config.example.yaml` in the repo). All paths must be absolute.
+
+`obsyncgit install` writes a starter YAML config to the default location (see output). To manage it afterwards:
+
+```bash
+# show the currently resolved configuration
+obsyncgit settings show
+
+# toggle automatic binary updates
+obsyncgit settings set self-update.enabled true
+
+# change the configured repository URL
+obsyncgit settings set repo-url git@github.com:you/vault.git
+```
+
+You can still edit the YAML manually if you prefer. All paths must be absolute.
 
 ```yaml
 repo_url: "git@github.com:you/vault.git"
@@ -51,7 +101,7 @@ ignore:
     - ".obsidian/cache/**"
     - "**/*.tmp"
 self_update:
-  enabled: false
+  enabled: true
   command: null
   interval_hours: 24
 git:
@@ -66,7 +116,7 @@ Field notes:
 - `poll_interval_seconds`: How often to `git pull --rebase` when no local edits happen.
 - `commit.max_files_in_summary`: controls how many filenames appear in commit messages. Above that limit the message switches to `updated N files`.
 - `ignore.globs`: Standard glob patterns matched against paths relative to `workdir`.
-- `self_update`: Optional hook; when `enabled` and `command` is provided the daemon will execute the command on its own schedule (hook stub provided in code).
+- `self_update`: Controls automatic binary updates. When enabled (default via CLI) ObsyncGit checks the GitHub releases page every `interval_hours` and replaces itself with the latest asset. Provide a `command` to run your own update script instead.
 - `git`: Optional overrides for author/committer identity.
 
 ## Behaviour details
@@ -80,5 +130,26 @@ Field notes:
 - Ensure the repository has sane permissions; the daemon does not sudo or elevate.
 - Large binary files should be excluded with `.gitignore` or added to `ignore.globs`.
 
-## Roadmap hooks
-`SelfUpdateConfig` and update hooks are wired into the configuration so you can extend `SyncDaemon::event_loop` with custom behaviour (e.g. invoke a release script or fetch the latest binary from a GitHub release).
+## Command line summary
+
+```
+obsyncgit run [--config path]              # start the daemon (default command)
+obsyncgit install [--config path] [--force]
+obsyncgit update [--config path] [--force]
+obsyncgit settings show|set KEY VALUE
+obsyncgit --help
+```
+
+`--config` always points at an alternate YAML file; omit it to use the default in `~/.config/ObsyncGit/config.yaml` (or the platform equivalent). Keys accepted by `settings set` include `repo-url`, `branch`, `remote`, `workdir`, `self-update.enabled`, `self-update.interval-hours`, and `self-update.command`.
+
+Run `obsyncgit update --force` to trigger a one-off update when automatic updates are disabled.
+
+## Releases & auto-updates
+
+Pushing a tag matching `v*` triggers the `release` GitHub Actions workflow. It now builds and packages binaries for:
+- Linux (`obsyncgit-x86_64-unknown-linux-gnu.tar.gz`)
+- macOS Intel (`obsyncgit-x86_64-apple-darwin.tar.gz`)
+- macOS Apple Silicon (`obsyncgit-aarch64-apple-darwin.tar.gz`)
+- Windows (`obsyncgit-x86_64-pc-windows-msvc.zip`)
+
+Both the cross-platform installers (`install.sh` / `install.ps1`) and the in-app self-updater pull these assets directly, so keep the `obsyncgit-<target>.<ext>` naming if you add more targets.

@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_ext: tar.gz
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact_ext: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_ext: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_ext: zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package binary (unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/obsyncgit dist/obsyncgit
+          tar -C dist -czf obsyncgit-${{ matrix.target }}.tar.gz obsyncgit
+
+      - name: Package binary (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dist = Join-Path $PWD "dist"
+          New-Item -ItemType Directory -Path $dist -Force | Out-Null
+          $binaryPath = Resolve-Path "target\${{ matrix.target }}\release\obsyncgit.exe"
+          Copy-Item $binaryPath (Join-Path $dist "obsyncgit.exe") -Force
+          Compress-Archive -Path (Join-Path $dist "obsyncgit.exe") -DestinationPath "obsyncgit-${{ matrix.target }}.zip"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: obsyncgit-${{ matrix.target }}.${{ matrix.artifact_ext }}
