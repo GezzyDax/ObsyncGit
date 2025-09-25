@@ -1,0 +1,28 @@
+name: Enforce Develop PR Policy
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches:
+      - develop
+
+jobs:
+  guard:
+    name: Enforce branch naming for develop
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Validate branch prefix
+        run: |
+          branch="${{ github.head_ref }}"
+          if [[ "$branch" == release-please--* || "$branch" == main ]]; then
+            echo "Automation branch $branch is allowed."
+            exit 0
+          fi
+          if [[ "$branch" =~ ^(feature|bugfix|hotfix|chore|docs|refactor)/ ]]; then
+            echo "Branch $branch accepted for develop."
+            exit 0
+          fi
+          echo "::error::Branches merged into develop must use feature/…, bugfix/…, hotfix/…, chore/…, docs/…, or refactor/… prefixes." >&2
+          exit 1

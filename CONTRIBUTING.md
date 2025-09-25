@@ -10,6 +10,9 @@ We follow a Gitflow-inspired model:
 - `develop` is the integration branch; all new work lands here first.
 - Feature work happens in short-lived branches prefixed with `feature/`, `bugfix/`, or `hotfix/` as appropriate.
 - Urgent production fixes may branch directly from `main` using the `hotfix/` prefix and must be merged back into both `main` and `develop`.
+- Pull requests into `main` are only accepted from `develop` (normal promotions) or release automation (`release-please--*` branches). Direct PRs from feature branches are rejected by CI.
+- Pull requests into `develop` must come from branches with one of the approved prefixes (`feature/`, `bugfix/`, `hotfix/`, `chore/`, `docs/`, `refactor/`).
+- After a pull request is merged, the source branch is deleted automatically to keep the branch list tidy.
 
 All changes enter the codebase via pull requests. Direct pushes to `main` or `develop` are discouraged.
 
@@ -58,6 +61,14 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 - Lints must pass with `cargo clippy --all-targets --all-features -- -D warnings`.
 - Tests must pass on all tiers; add coverage for new behaviour.
 - Shell scripts are linted with [ShellCheck](https://www.shellcheck.net/); PowerShell scripts run through [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer).
+
+## Repository configuration
+
+- Enable **Automatically delete head branches** in *Settings → General → Pull Requests* so merged branches disappear automatically (the workflow in this repo also deletes them as a fallback).
+- Add branch protection rules via *Settings → Branches*:
+  - `main`: require pull requests, at least one approval, dismiss stale reviews, require CODEOWNERS review, block force-pushes/deletions, require status checks (`CI`, `Release Please`), and enforce conversation resolution.
+  - `develop`: same as `main`, but status checks can be limited to `CI` if desired.
+- Keep workflow permissions at the default of “Read and write” and avoid granting bypass rights except to trusted maintainers.
 
 ## Reporting issues
 
