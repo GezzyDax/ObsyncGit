@@ -2,52 +2,255 @@ mod config;
 mod daemon;
 mod git;
 mod ignore;
+mod updater;
 
-use anyhow::{Context, Result, anyhow};
+use std::str::FromStr;
+use std::sync::atomic::Ordering;
+
+use anyhow::{Context, Result, bail};
 use camino::Utf8PathBuf;
-use config::Config;
+use clap::{Parser, Subcommand};
+use config::{CommitConfig, Config, GitOptions, IgnoreConfig, SelfUpdateConfig};
 use daemon::SyncDaemon;
+use directories::BaseDirs;
+use tracing::{info, warn};
+use updater::SelfUpdateManager;
 
 const BIN_NAME: &str = env!("CARGO_BIN_NAME");
-const APP_NAME: &str = env!("CARGO_PKG_NAME");
+
+#[derive(Parser, Debug)]
+#[command(name = BIN_NAME, version, about = "Obsidian Git synchronizer daemon")]
+struct Cli {
+    /// Path to configuration YAML file
+    #[arg(global = true, short, long, value_name = "PATH")]
+    config: Option<Utf8PathBuf>,
+
+    #[command(subcommand)]
+    command: Option<Command>,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum Command {
+    /// Run the background synchronizer (default)
+    Run,
+    /// Create a starter configuration file
+    Install {
+        /// Overwrite an existing file
+        #[arg(long)]
+        force: bool,
+    },
+    /// Manually trigger a binary self-update
+    Update {
+        /// Force the updater even if auto-updates are disabled
+        #[arg(long)]
+        force: bool,
+    },
+    /// Inspect or change configuration values
+    Settings {
+        #[command(subcommand)]
+        command: SettingsCommand,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+enum SettingsCommand {
+    /// Print the resolved configuration as YAML
+    Show,
+    /// Update a configuration value (e.g. self-update.enabled true)
+    Set { key: SettingsKey, value: String },
+}
+
+#[derive(Debug, Clone, Copy)]
+enum SettingsKey {
+    RepoUrl,
+    Branch,
+    Remote,
+    Workdir,
+    SelfUpdateEnabled,
+    SelfUpdateIntervalHours,
+    SelfUpdateCommand,
+}
+
+impl FromStr for SettingsKey {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.replace('_', "-").to_ascii_lowercase().as_str() {
+            "repo-url" => Ok(Self::RepoUrl),
+            "branch" => Ok(Self::Branch),
+            "remote" => Ok(Self::Remote),
+            "workdir" | "work-dir" => Ok(Self::Workdir),
+            "self-update.enabled" | "self-update-enabled" => Ok(Self::SelfUpdateEnabled),
+            "self-update.interval-hours" | "self-update-interval" | "self-update.interval" => {
+                Ok(Self::SelfUpdateIntervalHours)
+            }
+            "self-update.command" | "self-update-command" => Ok(Self::SelfUpdateCommand),
+            other => Err(format!("unknown configuration key: {other}")),
+        }
+    }
+}
 
 fn main() -> Result<()> {
-    let config_path = parse_args()?;
+    let cli = Cli::parse();
     init_logging();
 
-    let (config, resolved_path) = Config::detect_and_load(config_path)?;
-    tracing::info!(path = %resolved_path, "configuration loaded");
+    let Cli { config, command } = cli;
+    match command.unwrap_or(Command::Run) {
+        Command::Run => handle_run(config),
+        Command::Install { force } => handle_install(config, force),
+        Command::Update { force } => handle_update(config, force),
+        Command::Settings { command } => handle_settings(config, command),
+    }
+}
 
-    let daemon = SyncDaemon::new(config)?;
+fn handle_run(config_arg: Option<Utf8PathBuf>) -> Result<()> {
+    let (config, config_path) = Config::detect_and_load(config_arg.clone())?;
+    info!(path = %config_path, "configuration loaded");
+
+    let daemon = SyncDaemon::new(config.clone())?;
+    let shutdown = daemon.shutdown_handle();
+    let update_handle =
+        SelfUpdateManager::spawn_if_enabled(&config.self_update, &config_path, shutdown.clone());
+
     daemon.run()?;
+    shutdown.store(true, Ordering::SeqCst);
+    if let Some(handle) = update_handle
+        && let Err(err) = handle.join()
+    {
+        warn!(?err, "self-update worker exited unexpectedly");
+    }
     Ok(())
 }
 
-fn parse_args() -> Result<Option<Utf8PathBuf>> {
-    let mut args = std::env::args().skip(1);
-    let mut config = None;
+fn handle_install(config_arg: Option<Utf8PathBuf>, force: bool) -> Result<()> {
+    let path = Config::resolve_path(config_arg)?;
+    if path.exists() && !force {
+        bail!(
+            "configuration already exists at {} (use --force to overwrite)",
+            path
+        );
+    }
+    let cfg = default_config();
+    cfg.save_to_path(&path)?;
+    println!("Created configuration at {path}. Edit this file before running `obsyncgit run`.");
+    Ok(())
+}
 
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            "--config" | "-c" => {
-                let value = args.next().context("expected value after --config/-c")?;
-                config = Some(Utf8PathBuf::from(value));
+fn handle_update(config_arg: Option<Utf8PathBuf>, force: bool) -> Result<()> {
+    let (config, config_path) = Config::detect_and_load(config_arg)?;
+    if !config.self_update.enabled && !force {
+        println!(
+            "Auto-updates are disabled in the configuration. Re-run with --force or enable them via \"obsyncgit settings set self-update.enabled true\"."
+        );
+        return Ok(());
+    }
+    let manager = SelfUpdateManager::new(&config.self_update, &config_path);
+    manager.check_now(force)?;
+    println!("Self-update check completed.");
+    if !config.self_update.enabled {
+        println!(
+            "Auto-updates are currently disabled. Enable them with `obsyncgit settings set self-update.enabled true` if desired."
+        );
+    }
+    Ok(())
+}
+
+fn handle_settings(config_arg: Option<Utf8PathBuf>, command: SettingsCommand) -> Result<()> {
+    match command {
+        SettingsCommand::Show => {
+            let (config, _) = Config::detect_and_load(config_arg)?;
+            let rendered =
+                serde_yaml::to_string(&config).context("failed to render configuration as YAML")?;
+            println!("{rendered}");
+            Ok(())
+        }
+        SettingsCommand::Set { key, value } => {
+            let path = Config::resolve_path(config_arg.clone())?;
+            let mut config = Config::load_from_path(&path)?;
+            apply_setting(&mut config, key, &value)?;
+            config.save_to_path(&path)?;
+            println!("Updated {key:?} in {path}");
+            Ok(())
+        }
+    }
+}
+
+fn apply_setting(config: &mut Config, key: SettingsKey, value: &str) -> Result<()> {
+    match key {
+        SettingsKey::RepoUrl => config.repo_url = value.to_string(),
+        SettingsKey::Branch => config.branch = value.to_string(),
+        SettingsKey::Remote => config.remote = value.to_string(),
+        SettingsKey::Workdir => {
+            if value.trim().is_empty() {
+                bail!("workdir cannot be empty");
             }
-            "--help" | "-h" => {
-                print_help();
-                std::process::exit(0);
-            }
-            "--version" | "-V" => {
-                println!("{APP_NAME} {}", env!("CARGO_PKG_VERSION"));
-                std::process::exit(0);
-            }
-            other => {
-                return Err(anyhow!("unknown argument: {other}"));
+            config.workdir = Utf8PathBuf::from(value);
+        }
+        SettingsKey::SelfUpdateEnabled => {
+            config.self_update.enabled = parse_bool(value)?;
+        }
+        SettingsKey::SelfUpdateIntervalHours => {
+            config.self_update.interval_hours = parse_optional_hours(value)?;
+        }
+        SettingsKey::SelfUpdateCommand => {
+            let cleaned = value.trim();
+            if cleaned.eq_ignore_ascii_case("none") || cleaned.is_empty() {
+                config.self_update.command = None;
+            } else {
+                config.self_update.command = Some(cleaned.to_string());
             }
         }
     }
+    Ok(())
+}
 
-    Ok(config)
+fn parse_bool(value: &str) -> Result<bool> {
+    match value.to_ascii_lowercase().as_str() {
+        "true" | "yes" | "on" | "1" => Ok(true),
+        "false" | "no" | "off" | "0" => Ok(false),
+        other => bail!("cannot parse '{other}' as boolean"),
+    }
+}
+
+fn parse_optional_hours(value: &str) -> Result<Option<u64>> {
+    let normalized = value.trim().to_ascii_lowercase();
+    if normalized.is_empty() || normalized == "none" || normalized == "never" || normalized == "off"
+    {
+        return Ok(None);
+    }
+    let hours: u64 = normalized
+        .parse()
+        .with_context(|| format!("failed to parse '{value}' as hours"))?;
+    Ok(Some(hours))
+}
+
+fn default_config() -> Config {
+    let workdir = BaseDirs::new()
+        .and_then(|dirs| Utf8PathBuf::from_path_buf(dirs.home_dir().join("Obsidian")).ok())
+        .unwrap_or_else(|| Utf8PathBuf::from("/path/to/your/obsidian-vault"));
+
+    Config {
+        repo_url: "git@github.com:username/repo.git".to_string(),
+        branch: "main".to_string(),
+        remote: "origin".to_string(),
+        workdir,
+        debounce_seconds: 5,
+        poll_interval_seconds: 300,
+        commit: CommitConfig::default(),
+        ignore: IgnoreConfig {
+            globs: vec![
+                ".obsidian/cache/**".to_string(),
+                "**/*.tmp".to_string(),
+                "**/*.swp".to_string(),
+            ],
+        },
+        self_update: SelfUpdateConfig {
+            enabled: true,
+            command: None,
+            interval_hours: Some(24),
+        },
+        git: GitOptions::default(),
+    }
 }
 
 fn init_logging() {
@@ -67,13 +270,4 @@ fn init_logging() {
     if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
         eprintln!("failed to initialize logging: {err}");
     }
-}
-
-fn print_help() {
-    println!("{APP_NAME} - lightweight git-based folder synchronizer");
-    println!("\nUSAGE:\n    {BIN_NAME} [OPTIONS]\n");
-    println!("OPTIONS:");
-    println!("    -c, --config <PATH>    Path to configuration YAML file");
-    println!("    -h, --help             Show this help message");
-    println!("    -V, --version          Print version information");
 }

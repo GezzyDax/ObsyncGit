@@ -1,6 +1,6 @@
 [package]
 name = "ObsyncGit"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["GezzyDax <me@gezzy.ru>"]
 description = "Lightweight git-based folder synchronizer daemon"
@@ -12,14 +12,16 @@ camino = { version = "1.2", features = ["serde1"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 crossbeam-channel = "0.5"
 ctrlc = "3"
-directories = "5"
+directories = "6"
 globset = "0.4"
-notify = "6.1"
+notify = "8.2"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-thiserror = "1"
+thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+clap = { version = "4", features = ["derive"] }
+self_update = "0.42"
 
 [dev-dependencies]
 tempfile = "3"

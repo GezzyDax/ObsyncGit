@@ -3,7 +3,7 @@ use std::{fs, time::Duration};
 use anyhow::{Context, Result};
 use camino::{Utf8Path, Utf8PathBuf};
 use directories::ProjectDirs;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 fn default_branch() -> String {
     "main".to_string()
@@ -29,7 +29,7 @@ fn default_max_files_in_summary() -> usize {
     5
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub repo_url: String,
     #[serde(default = "default_branch")]
@@ -62,28 +62,41 @@ impl Config {
         Ok(config)
     }
 
-    pub fn detect_and_load(explicit: Option<Utf8PathBuf>) -> Result<(Self, Utf8PathBuf)> {
+    pub fn resolve_path(explicit: Option<Utf8PathBuf>) -> Result<Utf8PathBuf> {
         if let Some(path) = explicit {
-            let cfg = Self::load_from_path(&path)?;
-            return Ok((cfg, path));
+            return Ok(path);
         }
 
         if let Ok(env_path) =
             std::env::var("OBSYNCGIT_CONFIG").or_else(|_| std::env::var("GIT_SYNCD_CONFIG"))
         {
-            let utf_path = Utf8PathBuf::from(env_path);
-            let cfg = Self::load_from_path(&utf_path)?;
-            return Ok((cfg, utf_path));
+            return Ok(Utf8PathBuf::from(env_path));
         }
 
         let project_dirs = ProjectDirs::from("dev", "ObsyncGit", "ObsyncGit")
             .context("cannot determine default config directory")?;
-        let default_path =
-            Utf8PathBuf::from_path_buf(project_dirs.config_dir().join("config.yaml"))
-                .ok()
-                .context("default config path is not valid UTF-8")?;
-        let cfg = Self::load_from_path(&default_path)?;
-        Ok((cfg, default_path))
+        Utf8PathBuf::from_path_buf(project_dirs.config_dir().join("config.yaml"))
+            .ok()
+            .context("default config path is not valid UTF-8")
+    }
+
+    pub fn save_to_path<P: AsRef<Utf8Path>>(&self, path: P) -> Result<()> {
+        let serialized =
+            serde_yaml::to_string(self).context("failed to render configuration to YAML")?;
+        let path = path.as_ref();
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("failed to create directories for {}", parent))?;
+        }
+        std::fs::write(path, serialized)
+            .with_context(|| format!("failed to write configuration file to {path}"))?;
+        Ok(())
+    }
+
+    pub fn detect_and_load(explicit: Option<Utf8PathBuf>) -> Result<(Self, Utf8PathBuf)> {
+        let path = Self::resolve_path(explicit)?;
+        let cfg = Self::load_from_path(&path)?;
+        Ok((cfg, path))
     }
 
     pub fn debounce_duration(&self) -> Duration {
@@ -104,7 +117,7 @@ impl Config {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CommitConfig {
     #[serde(default = "default_commit_prefix")]
     pub prefix: String,
@@ -124,13 +137,13 @@ impl Default for CommitConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct IgnoreConfig {
     #[serde(default)]
     pub globs: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct SelfUpdateConfig {
     pub enabled: bool,
@@ -148,7 +161,7 @@ impl Default for SelfUpdateConfig {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
 #[serde(default)]
 pub struct GitOptions {
     pub executable: Option<String>,

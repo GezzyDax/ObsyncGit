@@ -37,6 +37,10 @@ impl SyncDaemon {
         })
     }
 
+    pub fn shutdown_handle(&self) -> Arc<AtomicBool> {
+        self.shutdown.clone()
+    }
+
     pub fn run(mut self) -> Result<()> {
         info!(path = %self.config.workdir, "starting ObsyncGit daemon");
 
@@ -47,10 +51,6 @@ impl SyncDaemon {
         .context("failed to install Ctrl-C handler")?;
 
         self.git.ensure_repo(&self.config.repo_url)?;
-
-        if self.config.self_update.enabled {
-            info!("self-update is enabled (custom command execution happens via configuration)");
-        }
 
         let (tx, rx) = unbounded();
         let ignore = Arc::new(self.ignore.clone());
@@ -191,7 +191,7 @@ impl SyncDaemon {
         Ok(())
     }
 
-    fn sync_once(&mut self) -> Result<bool> {
+    pub fn sync_once(&mut self) -> Result<bool> {
         self.git.stage_all()?;
         let files = self.git.list_changed_files()?;
         if files.is_empty() {
