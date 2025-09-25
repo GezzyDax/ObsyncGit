@@ -1,0 +1,14 @@
+[Unit]
+Description=git-syncd vault synchronizer
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/user/.local/bin/git-syncd --config /home/user/.config/git-syncd/config.yaml
+WorkingDirectory=/home/user/Obsidian
+Restart=always
+RestartSec=5
+Environment=GIT_SYNCD_LOG=info
+
+[Install]
+WantedBy=default.target

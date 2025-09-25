@@ -1,0 +1,23 @@
+# Copy this file to ~/.config/git-syncd/config.yaml and adjust values.
+repo_url: "git@github.com:example/vault.git"
+branch: "main"
+remote: "origin"
+workdir: "/home/user/Obsidian"
+debounce_seconds: 5
+poll_interval_seconds: 300
+commit:
+  prefix: "auto:"
+  max_files_in_summary: 5
+  include_timestamp: false
+ignore:
+  globs:
+    - ".obsidian/cache/**"
+    - "**/*.tmp"
+    - "**/*.swp"
+self_update:
+  enabled: false
+  command: null
+  interval_hours: 24
+git:
+  author_name: "Vault Sync"
+  author_email: "vault-sync@example.com"

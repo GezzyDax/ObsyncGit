@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>com.user.git-syncd</string>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/Users/you/bin/git-syncd</string>
+      <string>--config</string>
+      <string>/Users/you/.config/git-syncd/config.yaml</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/you/Obsidian</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>EnvironmentVariables</key>
+    <dict>
+      <key>GIT_SYNCD_LOG</key>
+      <string>info</string>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/Users/you/Library/Logs/git-syncd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/you/Library/Logs/git-syncd.err</string>
+  </dict>
+</plist>
