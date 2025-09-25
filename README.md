@@ -153,3 +153,12 @@ Pushing a tag matching `v*` triggers the `release` GitHub Actions workflow. It n
 - Windows (`obsyncgit-x86_64-pc-windows-msvc.zip`)
 
 Both the cross-platform installers (`install.sh` / `install.ps1`) and the in-app self-updater pull these assets directly, so keep the `obsyncgit-<target>.<ext>` naming if you add more targets.
+
+## Project workflow
+
+We use a Gitflow-style branching strategy:
+- `main` holds the latest stable release, while `develop` is the integration branch for upcoming work.
+- Feature branches (`feature/*`, `bugfix/*`, `hotfix/*`) always merge through pull requests; direct pushes to long-lived branches are discouraged.
+- release-please automates version bumps, changelog entries, and tagging after changes land on `main`.
+
+See `CONTRIBUTING.md` for full details on branching, PR expectations, and release management.
