@@ -18,7 +18,13 @@ All changes enter the codebase via pull requests. Direct pushes to `main` or `de
 1. Fork the repository and clone your fork.
 2. Branch from `develop`, e.g. `git checkout -b feature/add-awesome-thing develop`.
 3. Implement your changes and keep commits tidy using [Conventional Commits](https://www.conventionalcommits.org/).
-4. Run the quality gates locally: `cargo fmt`, `cargo clippy --all-targets --all-features`, and `cargo test --all --all-features`.
+4. Run the quality gates locally:
+   - `cargo fmt`
+   - `cargo clippy --all-targets --all-features`
+   - `cargo check --all --all-features --locked`
+   - `cargo test --all --all-features --locked`
+   - `shellcheck scripts/install.sh`
+   - `pwsh -NoProfile -Command "Set-ExecutionPolicy -Scope Process Bypass -Force; Import-Module PSScriptAnalyzer; Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Recurse -Severity Error"`
 5. Push your branch and open a pull request targeting `develop`.
 6. Ensure the GitHub Actions CI checks are green and request review.
 
@@ -49,6 +55,7 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 - Rustfmt enforces formatting; run `cargo fmt --all` before committing.
 - Lints must pass with `cargo clippy --all-targets --all-features -- -D warnings`.
 - Tests must pass on all tiers; add coverage for new behaviour.
+- Shell scripts are linted with [ShellCheck](https://www.shellcheck.net/); PowerShell scripts run through [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer).
 
 ## Reporting issues
 
