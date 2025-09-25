@@ -181,6 +181,8 @@ impl GitFacade {
         debug!(cmd = ?args, "running git command");
         let mut cmd = Command::new(&self.executable);
         cmd.current_dir(&self.repo_path)
+            .arg("-c")
+            .arg("core.quotepath=false")
             .args(args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
