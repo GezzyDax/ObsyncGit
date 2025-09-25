@@ -15,8 +15,8 @@ path = "src/lib.rs"
 default = []
 gui = [
     "dep:slint",
-    "dep:tray-icon",
     "dep:image",
+    # Platform-specific tray icon support is wired in via target dependencies.
 ]
 
 [dependencies]
@@ -37,8 +37,10 @@ clap = { version = "4", features = ["derive"] }
 self_update = "0.42"
 humantime = "2"
 slint = { version = "1.5", optional = true, features = ["backend-winit", "renderer-femtovg"] }
-tray-icon = { version = "0.11", optional = true }
 image = { version = "0.24", optional = true, default-features = false, features = ["png"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+tray-icon = { version = "0.11", optional = true }
 
 [build-dependencies]
 slint-build = { version = "1.5" }
