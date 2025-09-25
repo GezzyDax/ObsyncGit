@@ -251,6 +251,12 @@ impl GitFacade {
             .env("LC_ALL", "C")
             .env("LANG", "C");
 
+        if let Some(key_path) = &self.git_options.ssh_key_path {
+            let escaped = key_path.replace('\'', "'\\''");
+            let command = format!("ssh -i '{}' -o IdentitiesOnly=yes", escaped);
+            cmd.env("GIT_SSH_COMMAND", command);
+        }
+
         if include_author_env {
             if let Some(name) = &self.git_options.author_name {
                 cmd.env("GIT_AUTHOR_NAME", name)
