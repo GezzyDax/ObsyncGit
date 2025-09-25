@@ -4,6 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-release:
