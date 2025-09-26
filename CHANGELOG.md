@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0](https://github.com/GezzyDax/ObsyncGit/compare/v0.3.0...v0.4.0) (2025-09-26)
+
+
+### Features
+
+* add desktop control centre and distro autostart hooks ([5c6f12c](https://github.com/GezzyDax/ObsyncGit/commit/5c6f12cb8a303c4fd7b335db60c95ccd1f79d6f6))
+* add desktop control centre and distro autostart hooks ([29b7843](https://github.com/GezzyDax/ObsyncGit/commit/29b784389bfedd77ee205f7204be1a01e0c278fd))
+* add desktop control centre and distro autostart hooks ([bea5dde](https://github.com/GezzyDax/ObsyncGit/commit/bea5ddea59a7d73a7725e2595f0655cdfbea209e))
+* **gui:** add desktop autostart controls ([936a2b7](https://github.com/GezzyDax/ObsyncGit/commit/936a2b7d3a8d41599cfdcca16b465b5be93d856f))
+
+
+### Bug Fixes
+
+* enable tray icon dependency on supported targets ([821ee45](https://github.com/GezzyDax/ObsyncGit/commit/821ee452fe86a8a030c3279da2e85b5f811fe834))
+* enable tray icon through gui feature ([b741489](https://github.com/GezzyDax/ObsyncGit/commit/b74148923daedc89d79ba39ed50df384939006cf))
+* gate tray icon to supported platforms ([c50751e](https://github.com/GezzyDax/ObsyncGit/commit/c50751e812066962f52e828241ba8a58f088cab9))
+* gate tray icon to supported platforms ([9926a0b](https://github.com/GezzyDax/ObsyncGit/commit/9926a0b4bb6900277249e36d594f9c007ee5a4be))
+* resolve Cargo.lock merge conflict by regenerating lockfile ([7894451](https://github.com/GezzyDax/ObsyncGit/commit/789445196b8fb0a499673a2e03fafc14810614bc))
+
 ## [0.3.0](https://github.com/GezzyDax/ObsyncGit/compare/v0.2.1...v0.3.0) (2025-09-25)
 
 
