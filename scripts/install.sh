@@ -168,7 +168,7 @@ install_linux_runtime_deps() {
     if command -v sudo >/dev/null 2>&1; then
       SUDO_CMD="sudo"
     else
-      echo "Install GUI dependencies manually (requires root): gtk3, libayatana-appindicator, xdotool"
+      echo "Install GUI dependencies manually (requires root): GTK 3, GLib, GObject Introspection, libayatana-appindicator, xdotool"
       return
     fi
   fi
@@ -188,7 +188,7 @@ install_linux_runtime_deps() {
       return
     fi
 
-    APT_PACKAGES="pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev"
+    APT_PACKAGES="libgtk-3-0 libglib2.0-0 libgirepository-1.0-1 libayatana-appindicator3-1 xdotool"
     available_packages=""
     missing_packages=""
 
@@ -221,28 +221,28 @@ install_linux_runtime_deps() {
     fi
   elif command -v dnf >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via dnf"
-    if ! install_cmd dnf install -y gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool; then
-      echo "Install manually: sudo dnf install gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool"
+    if ! install_cmd dnf install -y gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool; then
+      echo "Install manually: sudo dnf install gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool"
     fi
   elif command -v yum >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via yum"
-    if ! install_cmd yum install -y gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool; then
-      echo "Install manually: sudo yum install gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool"
+    if ! install_cmd yum install -y gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool; then
+      echo "Install manually: sudo yum install gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool"
     fi
   elif command -v zypper >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via zypper"
-    if ! install_cmd zypper --non-interactive install gtk3 glib2-devel gobject-introspection-devel libappindicator3-1 xdotool; then
-      echo "Install manually: sudo zypper install gtk3 glib2-devel gobject-introspection-devel libappindicator3-1 xdotool"
+    if ! install_cmd zypper --non-interactive install gtk3 libappindicator3-1 xdotool; then
+      echo "Install manually: sudo zypper install gtk3 libappindicator3-1 xdotool"
     fi
   elif command -v apk >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via apk"
-    if ! install_cmd apk add --no-cache gtk+3.0 glib-dev gobject-introspection libappindicator3 xdotool; then
-      echo "Install manually: sudo apk add gtk+3.0 glib-dev gobject-introspection libappindicator3 xdotool"
+    if ! install_cmd apk add --no-cache gtk+3.0 glib gobject-introspection libappindicator xdotool; then
+      echo "Install manually: sudo apk add gtk+3.0 glib gobject-introspection libappindicator xdotool"
     fi
   elif command -v xbps-install >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via xbps-install"
-    if ! install_cmd xbps-install -Sy gtk+3 glib-devel gobject-introspection libayatana-appindicator xdotool; then
-      echo "Install manually: sudo xbps-install gtk+3 glib-devel gobject-introspection libayatana-appindicator xdotool"
+    if ! install_cmd xbps-install -Sy gtk+3 glib gobject-introspection libayatana-appindicator xdotool; then
+      echo "Install manually: sudo xbps-install gtk+3 glib gobject-introspection libayatana-appindicator xdotool"
     fi
   elif command -v nix-env >/dev/null 2>&1; then
     echo "NixOS detected. Install GUI dependencies with: nix profile install nixpkgs#gtk3 nixpkgs#libayatana-appindicator nixpkgs#xdotool"
