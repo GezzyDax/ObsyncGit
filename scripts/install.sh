@@ -192,16 +192,18 @@ install_linux_runtime_deps() {
     available_packages=""
     missing_packages=""
 
+    set --
     for pkg in $APT_PACKAGES; do
       if apt-cache show "$pkg" >/dev/null 2>&1; then
+        set -- "$@" "$pkg"
         available_packages="${available_packages:+$available_packages }$pkg"
       else
         missing_packages="${missing_packages:+$missing_packages }$pkg"
       fi
     done
 
-    if [ -n "$available_packages" ]; then
-      if ! ( set -- $available_packages; install_cmd apt-get install -y "$@" ); then
+    if [ "$#" -gt 0 ]; then
+      if ! install_cmd apt-get install -y "$@"; then
         echo "Please install manually: sudo apt-get install $available_packages" >&2
       fi
     else
