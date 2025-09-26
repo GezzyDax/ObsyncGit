@@ -16,7 +16,6 @@ default = []
 gui = [
     "dep:slint",
     "dep:image",
-    # Platform-specific tray icon support is wired in via target dependencies.
 ]
 
 [dependencies]
@@ -40,7 +39,7 @@ slint = { version = "1.5", optional = true, features = ["backend-winit", "render
 image = { version = "0.24", optional = true, default-features = false, features = ["png"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
-tray-icon = { version = "0.11", optional = true }
+tray-icon = "0.11"
 
 [build-dependencies]
 slint-build = { version = "1.5" }
