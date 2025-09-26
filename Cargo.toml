@@ -16,7 +16,7 @@ default = []
 gui = [
     "dep:slint",
     "dep:image",
-    # Platform-specific tray icon support is wired in via target dependencies.
+    "dep:tray-icon",
 ]
 
 [dependencies]
