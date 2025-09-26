@@ -73,7 +73,7 @@ The helper needs GTK and AppIndicator libraries at runtime. The installer tries 
 
 | Distro | Command |
 | --- | --- |
-| Ubuntu/Debian | `sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgobject-2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev` |
+| Ubuntu/Debian | `sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev` |
 | Arch/Manjaro | `sudo pacman -S gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool` |
 | Fedora/RHEL | `sudo dnf install gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool` |
 | openSUSE | `sudo zypper install gtk3 glib2-devel gobject-introspection-devel libappindicator3-1 xdotool` |

@@ -183,8 +183,8 @@ install_linux_runtime_deps() {
 
   if command -v apt-get >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via apt-get"
-    if ! { install_cmd apt-get update && install_cmd apt-get install -y pkg-config libgtk-3-dev libglib2.0-dev libgobject-2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev; }; then
-      echo "Please install: sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgobject-2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev"
+    if ! { install_cmd apt-get update && install_cmd apt-get install -y pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev; }; then
+      echo "Please install: sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev"
     fi
   elif command -v pacman >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via pacman"
