@@ -3,7 +3,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use camino::Utf8PathBuf;
 use obsyncgit::config::Config;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
@@ -12,9 +12,16 @@ use slint::ComponentHandle;
 
 slint::include_modules!();
 
+#[path = "obsyncgit-gui/autostart.rs"]
+mod autostart;
+
+use autostart::AutostartState;
+
 struct AppState {
     config_path: Utf8PathBuf,
     config: Config,
+    autostart_supported: bool,
+    autostart_enabled: bool,
 }
 
 fn main() -> Result<()> {
@@ -24,6 +31,8 @@ fn main() -> Result<()> {
     let state = Arc::new(Mutex::new(AppState {
         config_path,
         config,
+        autostart_supported: false,
+        autostart_enabled: false,
     }));
 
     let ui = ConfiguratorWindow::new().context("failed to initialize UI")?;
@@ -55,6 +64,25 @@ fn main() -> Result<()> {
         std::process::exit(0);
     });
 
+    let ui_weak_autostart = ui.as_weak();
+    {
+        let state = state.clone();
+        ui.on_autostart_toggle_requested(move |enabled| {
+            if let Some(ui) = ui_weak_autostart.upgrade() {
+                match handle_autostart_toggle(&ui, state.clone(), enabled) {
+                    Ok(message) => {
+                        if let Some(message) = message {
+                            set_status(&ui, message);
+                        }
+                    }
+                    Err(err) => {
+                        set_status(&ui, format!("Autostart update failed: {err}"));
+                    }
+                }
+            }
+        });
+    }
+
     setup_tray(&ui)?;
 
     ui.run()?;
@@ -62,7 +90,14 @@ fn main() -> Result<()> {
 }
 
 fn populate_ui(ui: &ConfiguratorWindow, state: &Arc<Mutex<AppState>>) -> Result<()> {
-    let guard = state.lock().unwrap();
+    let autostart_state = match autostart::status() {
+        Ok(state) => state,
+        Err(err) => {
+            set_status(ui, format!("Autostart status unavailable: {err}"));
+            AutostartState::Unsupported
+        }
+    };
+    let mut guard = state.lock().unwrap();
     ui.set_repo_url(guard.config.repo_url.clone().into());
     ui.set_branch(guard.config.branch.clone().into());
     ui.set_remote(guard.config.remote.clone().into());
@@ -104,6 +139,10 @@ fn populate_ui(ui: &ConfiguratorWindow, state: &Arc<Mutex<AppState>>) -> Result<
             .to_string()
             .into(),
     );
+    guard.autostart_supported = !matches!(autostart_state, AutostartState::Unsupported);
+    guard.autostart_enabled = matches!(autostart_state, AutostartState::Enabled);
+    ui.set_autostart_supported(guard.autostart_supported);
+    ui.set_autostart_enabled(guard.autostart_enabled);
     ui.set_status_text("".into());
     Ok(())
 }
@@ -173,6 +212,45 @@ fn run_manual_update() -> Result<()> {
 
 fn set_status(ui: &ConfiguratorWindow, message: impl Into<String>) {
     ui.set_status_text(message.into().into());
+}
+
+fn handle_autostart_toggle(
+    ui: &ConfiguratorWindow,
+    state: Arc<Mutex<AppState>>,
+    desired: bool,
+) -> Result<Option<String>> {
+    let (config_path, supported, previous) = {
+        let guard = state.lock().unwrap();
+        (
+            guard.config_path.clone(),
+            guard.autostart_supported,
+            guard.autostart_enabled,
+        )
+    };
+    if !supported {
+        bail!("autostart control is not available on this platform");
+    }
+    if desired == previous {
+        return Ok(None);
+    }
+
+    if let Err(err) = autostart::set_enabled(&config_path, desired) {
+        ui.set_autostart_enabled(previous);
+        return Err(err);
+    }
+    let new_state = autostart::status()?;
+
+    let mut guard = state.lock().unwrap();
+    guard.autostart_supported = !matches!(new_state, AutostartState::Unsupported);
+    guard.autostart_enabled = matches!(new_state, AutostartState::Enabled);
+    ui.set_autostart_supported(guard.autostart_supported);
+    ui.set_autostart_enabled(guard.autostart_enabled);
+
+    if guard.autostart_enabled {
+        Ok(Some("Autostart has been enabled.".to_string()))
+    } else {
+        Ok(Some("Autostart has been disabled.".to_string()))
+    }
 }
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
