@@ -201,7 +201,7 @@ install_linux_runtime_deps() {
     done
 
     if [ -n "$available_packages" ]; then
-      if ! install_cmd apt-get install -y $available_packages; then
+      if ! ( set -- $available_packages; install_cmd apt-get install -y "$@" ); then
         echo "Please install manually: sudo apt-get install $available_packages" >&2
       fi
     else
