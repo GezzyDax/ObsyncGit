@@ -179,6 +179,8 @@ Run `obsyncgit update --force` to trigger a one-off update when automatic update
 
 ## Releases & auto-updates
 
+Every push to `develop` and `main` now triggers the **Branch Builds** workflow. It compiles release-mode binaries for Linux, macOS, and Windows, then uploads artifacts named `obsyncgit-<platform>-dev.*` for `develop` and `obsyncgit-<platform>-release.*` for `main`. Grab these from the corresponding workflow run when you need a fresh dev build without waiting for a full release.
+
 Pushing a tag matching `v*` triggers the `release` GitHub Actions workflow. It now builds and packages binaries for:
 - Linux x86_64 (`obsyncgit-linux-x86_64.tar.gz`)
 - Linux ARM64 (`obsyncgit-linux-aarch64.tar.gz`)
