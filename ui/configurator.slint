@@ -27,12 +27,16 @@ export component ConfiguratorWindow inherits Window {
     in-out property <string> ssh_key_path;
     in-out property <bool> auto_update_enabled;
     in-out property <string> auto_update_interval_text;
+
+    // автозапуск
     in-out property <bool> autostart_enabled;
     in property <bool> autostart_supported;
+
+    // статусная строка
     in-out property <string> status_text;
 
+    // колбэки
     callback autostart_toggle_requested(bool);
-
     callback save_requested();
     callback manual_update_requested();
     callback exit_requested();
@@ -75,6 +79,7 @@ export component ConfiguratorWindow inherits Window {
                     FormRow { label: "Author Email"; value <=> root.author_email; placeholder: "sync@example.com"; }
                     FormRow { label: "SSH Key"; value <=> root.ssh_key_path; placeholder: "~/.ssh/id_ed25519"; }
 
+                    // автообновления
                     Rectangle {
                         background: rgba(124, 77, 255, 0.08);
                         border-radius: 12px;
@@ -90,6 +95,7 @@ export component ConfiguratorWindow inherits Window {
                         }
                     }
 
+                    // автозапуск
                     Rectangle {
                         background: rgba(124, 77, 255, 0.08);
                         border-radius: 12px;

@@ -139,10 +139,12 @@ fn populate_ui(ui: &ConfiguratorWindow, state: &Arc<Mutex<AppState>>) -> Result<
             .to_string()
             .into(),
     );
+
     guard.autostart_supported = !matches!(autostart_state, AutostartState::Unsupported);
     guard.autostart_enabled = matches!(autostart_state, AutostartState::Enabled);
     ui.set_autostart_supported(guard.autostart_supported);
     ui.set_autostart_enabled(guard.autostart_enabled);
+
     ui.set_status_text("".into());
     Ok(())
 }
