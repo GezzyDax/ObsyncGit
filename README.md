@@ -9,6 +9,7 @@ Lightweight watcher daemon that keeps a working tree in sync with a remote Git r
 - Periodically pulls remote changes even when nothing happens locally.
 - Configurable ignore globs so editor caches and similar junk stay out of Git.
 - Emits compact structured logs via `tracing`.
+- Optional desktop control centre with system tray integration (obsyncgit-gui).
 
 ## Installation
 
@@ -25,6 +26,8 @@ OBSYNCGIT_VERSION=v1.2.3 OBSYNCGIT_INSTALL_DIR=$HOME/.local/bin \
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/GezzyDax/ObsyncGit/main/scripts/install.sh)"
 ```
 
+After installation the script registers a per-user login service (systemd user unit on Linux, LaunchAgent on macOS) so the daemon starts automatically. You can adjust or disable it later through your platform tools or via the `obsyncgit-gui` helper.
+
 ### Windows (PowerShell)
 
 ```powershell
@@ -32,6 +35,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubus
 ```
 
 By default this installs the binary into `%LOCALAPPDATA%\ObsyncGit\bin` and makes sure the folder is on your user `PATH`. Set `OBSYNCGIT_VERSION` or `OBSYNCGIT_INSTALL_DIR` beforehand to customise the release tag or destination.
+
+The installer also provisions a Task Scheduler entry named **ObsyncGit** so the daemon launches at logon.
 
 ### Build from source
 
@@ -53,6 +58,32 @@ obsyncgit run
 ```
 
 To stop the daemon press `Ctrl+C`; it shuts down cleanly.
+
+### Desktop control centre
+
+`obsyncgit-gui` ships alongside the daemon. It mimics the macOS visual style and works on Linux (Wayland/X11), macOS, and Windows. Use it to edit the YAML configuration, change author details, point to a dedicated SSH key, toggle automatic updates, or trigger a manual update. Closing the window hides it in the system tray; use the tray menu to restore or quit.
+
+```
+obsyncgit-gui              # launch the desktop helper
+```
+
+#### Linux GUI dependencies
+
+The helper needs GTK and AppIndicator libraries at runtime. The installer tries to add them automatically, but here are the equivalent manual commands:
+
+| Distro | Command |
+| --- | --- |
+| Ubuntu/Debian | `sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev` |
+| Arch/Manjaro | `sudo pacman -S gtk3 glib2 gobject-introspection libappindicator-gtk3 xdotool` |
+| Fedora/RHEL | `sudo dnf install gtk3 glib2 glib2-devel gobject-introspection gobject-introspection-devel libappindicator-gtk3 xdotool` |
+| openSUSE | `sudo zypper install gtk3 glib2-devel gobject-introspection-devel libappindicator3-1 xdotool` |
+| Alpine | `sudo apk add gtk+3.0 glib-dev gobject-introspection libappindicator3 xdotool` |
+| Void | `sudo xbps-install gtk+3 glib-devel gobject-introspection libayatana-appindicator xdotool` |
+| NixOS | `nix profile install nixpkgs#gtk3 nixpkgs#libayatana-appindicator nixpkgs#xdotool` |
+
+> **Tip:** Newer Ubuntu releases have dropped some transitional packages (e.g. `libgobject-2.0-dev`).
+> The installer automatically skips packages that are unavailable in your configured repositories;
+> when installing manually, omit any missing packages instead of failing the whole command.
 
 ### Install as a systemd user service (Linux)
 1. Copy the release binary somewhere on your `$PATH`, e.g. `~/.local/bin/obsyncgit`.
@@ -107,6 +138,7 @@ self_update:
 git:
   author_name: "Vault Sync"
   author_email: "sync@example.com"
+  ssh_key_path: "~/.ssh/id_ed25519"
 ```
 
 Field notes:
@@ -117,7 +149,7 @@ Field notes:
 - `commit.max_files_in_summary`: controls how many filenames appear in commit messages. Above that limit the message switches to `updated N files`.
 - `ignore.globs`: Standard glob patterns matched against paths relative to `workdir`.
 - `self_update`: Controls automatic binary updates. When enabled (default via CLI) ObsyncGit checks the GitHub releases page every `interval_hours` and replaces itself with the latest asset. Provide a `command` to run your own update script instead.
-- `git`: Optional overrides for author/committer identity.
+- `git`: Optional overrides for author/committer identity and the SSH key used when talking to the remote (`ssh_key_path`).
 
 ## Behaviour details
 - New files are automatically staged thanks to `git add -A`.
@@ -136,6 +168,7 @@ Field notes:
 obsyncgit run [--config path]              # start the daemon (default command)
 obsyncgit install [--config path] [--force]
 obsyncgit update [--config path] [--force]
+obsyncgit-gui [--config path]              # desktop helper & tray
 obsyncgit settings show|set KEY VALUE
 obsyncgit --help
 ```
@@ -155,6 +188,8 @@ Pushing a tag matching `v*` triggers the `release` GitHub Actions workflow. It n
 - Windows ARM64 (`obsyncgit-windows-arm64.zip`)
 
 Both the cross-platform installers (`install.sh` / `install.ps1`) and the in-app self-updater pull these assets directly, so keep the `obsyncgit-<target>.<ext>` naming if you add more targets.
+
+Each archive bundles the daemon (`obsyncgit`) and the GUI helper (`obsyncgit-gui`) for the supported platform so the installer can place both.
 
 ## Project workflow
 
