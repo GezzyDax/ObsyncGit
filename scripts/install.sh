@@ -183,8 +183,34 @@ install_linux_runtime_deps() {
 
   if command -v apt-get >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via apt-get"
-    if ! { install_cmd apt-get update && install_cmd apt-get install -y pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev; }; then
-      echo "Please install: sudo apt-get install pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev"
+    if ! install_cmd apt-get update; then
+      echo "apt-get update failed; install GUI dependencies manually." >&2
+      return
+    fi
+
+    APT_PACKAGES="pkg-config libgtk-3-dev libglib2.0-dev libgirepository1.0-dev libayatana-appindicator3-dev libxdo-dev"
+    available_packages=""
+    missing_packages=""
+
+    for pkg in $APT_PACKAGES; do
+      if apt-cache show "$pkg" >/dev/null 2>&1; then
+        available_packages="${available_packages:+$available_packages }$pkg"
+      else
+        missing_packages="${missing_packages:+$missing_packages }$pkg"
+      fi
+    done
+
+    if [ -n "$available_packages" ]; then
+      if ! install_cmd apt-get install -y $available_packages; then
+        echo "Please install manually: sudo apt-get install $available_packages" >&2
+      fi
+    else
+      echo "None of the expected GUI packages are available via apt-get; install the required GTK/AppIndicator dependencies manually." >&2
+    fi
+
+    if [ -n "$missing_packages" ]; then
+      echo "Skipped unavailable packages: $missing_packages" >&2
+      echo "Install the closest alternatives provided by your distribution if the GUI requires them." >&2
     fi
   elif command -v pacman >/dev/null 2>&1; then
     echo "Installing GUI runtime dependencies via pacman"

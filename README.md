@@ -81,6 +81,10 @@ The helper needs GTK and AppIndicator libraries at runtime. The installer tries 
 | Void | `sudo xbps-install gtk+3 glib-devel gobject-introspection libayatana-appindicator xdotool` |
 | NixOS | `nix profile install nixpkgs#gtk3 nixpkgs#libayatana-appindicator nixpkgs#xdotool` |
 
+> **Tip:** Newer Ubuntu releases have dropped some transitional packages (e.g. `libgobject-2.0-dev`).
+> The installer automatically skips packages that are unavailable in your configured repositories;
+> when installing manually, omit any missing packages instead of failing the whole command.
+
 ### Install as a systemd user service (Linux)
 1. Copy the release binary somewhere on your `$PATH`, e.g. `~/.local/bin/obsyncgit`.
 2. Copy the supplied unit file and adjust the paths:
