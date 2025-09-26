@@ -5,6 +5,19 @@ edition = "2024"
 authors = ["GezzyDax <me@gezzy.ru>"]
 description = "Lightweight git-based folder synchronizer daemon"
 license = "MIT"
+build = "build.rs"
+
+[lib]
+name = "obsyncgit"
+path = "src/lib.rs"
+
+[features]
+default = []
+gui = [
+    "dep:slint",
+    "dep:image",
+    "dep:tray-icon",
+]
 
 [dependencies]
 anyhow = "1"
@@ -28,6 +41,15 @@ self_update = { version = "0.42", default-features = false, features = [
     "archive-zip",
     "compression-zip-deflate",
 ] }
+humantime = "2"
+slint = { version = "1.5", optional = true, features = ["backend-winit", "renderer-femtovg"] }
+image = { version = "0.24", optional = true, default-features = false, features = ["png"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+tray-icon = { version = "0.11", optional = true }
+
+[build-dependencies]
+slint-build = { version = "1.5" }
 
 [dev-dependencies]
 tempfile = "3"
@@ -35,6 +57,11 @@ tempfile = "3"
 [[bin]]
 name = "obsyncgit"
 path = "src/main.rs"
+
+[[bin]]
+name = "obsyncgit-gui"
+path = "src/bin/obsyncgit-gui.rs"
+required-features = ["gui"]
 
 [profile.release]
 strip = true

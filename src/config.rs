@@ -167,4 +167,5 @@ pub struct GitOptions {
     pub executable: Option<String>,
     pub author_name: Option<String>,
     pub author_email: Option<String>,
+    pub ssh_key_path: Option<String>,
 }

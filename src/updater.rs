@@ -12,7 +12,10 @@ use crate::config::SelfUpdateConfig;
 
 const REPO_OWNER: &str = "GezzyDax";
 const REPO_NAME: &str = "ObsyncGit";
-const BIN_NAME: &str = env!("CARGO_BIN_NAME");
+const BIN_NAME: &str = match option_env!("CARGO_BIN_NAME") {
+    Some(name) => name,
+    None => "obsyncgit",
+};
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Clone, Debug)]
