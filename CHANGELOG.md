@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug Fixes
 
+* remove transitional libgobject apt dependency from installer ([d829969](https://github.com/GezzyDax/ObsyncGit/commit/d829969ada0a60df0535c04c0b53cb1e5377a9ca))
 * skip unavailable apt packages ([8f1c4aa](https://github.com/GezzyDax/ObsyncGit/commit/8f1c4aac104e2153851848e3dbe8a78dbfb36bb0))
 
 ## [0.4.0](https://github.com/GezzyDax/ObsyncGit/compare/v0.3.0...v0.4.0) (2025-09-26)
