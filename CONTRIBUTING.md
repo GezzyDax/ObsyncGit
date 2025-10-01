@@ -48,6 +48,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 4. Finally, merge the release PR back into `develop` (usually by fast-forwarding `develop` to `main`) to keep branches in sync.
 
 > **Maintainers:** The `Release Please` workflow requires a classic personal access token (PAT) with `repo` scope stored as the `RELEASE_PLEASE_TOKEN` secret. This bypasses GitHub's restriction on workflows creating pull requests. Generate the PAT from your account and add it under *Settings → Secrets → Actions*.
+>
+> Release detection relies on [Conventional Commits](https://www.conventionalcommits.org/); make sure user-visible work lands via `feat:` / `fix:` (or, for docs/ops tweaks, `docs:`, `chore:`, `ci:`) so release-please can bump versions automatically.
 
 ## Development environment
 
