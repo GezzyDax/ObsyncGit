@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2](https://github.com/GezzyDax/ObsyncGit/compare/v0.4.1...v0.4.2) (2025-10-01)
+
+
+### Bug Fixes
+
+* **git:** clear stale index lock ([a5804a4](https://github.com/GezzyDax/ObsyncGit/commit/a5804a401db9518c8a9d5e3c3cf39446e5b201af))
+* **git:** clear stale index lock ([cbfbd5d](https://github.com/GezzyDax/ObsyncGit/commit/cbfbd5de464254541b68f23c995c3a093829adb5))
+* **git:** handle stale mtime without io::Error ([f853655](https://github.com/GezzyDax/ObsyncGit/commit/f85365561d4b2425cd45871445ccb10d99ca72f1))
+
 ## [0.4.1](https://github.com/GezzyDax/ObsyncGit/compare/v0.4.0...v0.4.1) (2025-09-26)
 
 

@@ -1,6 +1,6 @@
 [package]
 name = "ObsyncGit"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 authors = ["GezzyDax <me@gezzy.ru>"]
 description = "Lightweight git-based folder synchronizer daemon"
