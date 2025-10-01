@@ -1,0 +1,42 @@
+name: Sync Release Back to Develop
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fast-forward-develop:
+    name: Fast-forward develop from main
+    if: startsWith(github.event.head_commit.message, 'chore(main): release')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Ensure develop is ancestor
+        id: ancestor
+        run: |
+          git fetch origin develop
+          if git merge-base --is-ancestor origin/develop HEAD; then
+            echo "ff-possible=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ff-possible=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push fast-forward to develop
+        if: steps.ancestor.outputs.ff-possible == 'true'
+        run: |
+          git push origin HEAD:develop
+
+      - name: Report skipped fast-forward
+        if: steps.ancestor.outputs.ff-possible != 'true'
+        run: |
+          echo "develop has diverged; manual intervention required" >> "$GITHUB_STEP_SUMMARY"
+          exit 1

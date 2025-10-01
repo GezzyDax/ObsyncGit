@@ -4,23 +4,19 @@ Thanks for your interest in improving ObsyncGit! This guide explains how we orga
 
 ## Branching model
 
-We follow a Gitflow-inspired model:
-
-- `main` always reflects the latest production-ready release.
-- `develop` is the integration branch; all new work lands here first.
-- Feature work happens in short-lived branches prefixed with `feature/`, `bugfix/`, or `hotfix/` as appropriate.
-- Urgent production fixes may branch directly from `main` using the `hotfix/` prefix and must be merged back into both `main` and `develop`.
-- Pull requests into `main` are only accepted from `develop` (normal promotions) or release automation (`release-please--*` branches). Direct PRs from feature branches are rejected by CI.
-- Pull requests into `develop` must come from branches with one of the approved prefixes (`feature/`, `bugfix/`, `hotfix/`, `chore/`, `docs/`, `refactor/`).
+- `develop` is the integration branch; every change is merged here first via pull requests.
+- `main` mirrors `develop`. A dedicated workflow fast-forwards `main` after every successful push to `develop`, so do **not** open manual PRs from `develop` to `main`.
+- Feature branches must start with an approved prefix (`feature/`, `bugfix/`, `hotfix/`, `chore/`, `docs/`, `refactor/`, `ci/`, `build/`, `test/`).
+- Hotfix work may branch directly from `main`, but still merge back into `develop` so the automation can promote it forward.
 - After a pull request is merged, the source branch is deleted automatically to keep the branch list tidy.
 
-All changes enter the codebase via pull requests. Direct pushes to `main` or `develop` are discouraged.
+All changes enter the codebase via pull requests. Direct pushes to `develop` are reserved for automation; never force-push to protected branches.
 
 ## Workflow for contributors
 
 1. Fork the repository and clone your fork.
 2. Branch from `develop`, e.g. `git checkout -b feature/add-awesome-thing develop`.
-3. Implement your changes and keep commits tidy using [Conventional Commits](https://www.conventionalcommits.org/).
+3. Implement your changes and keep commits tidy using [Conventional Commits](https://www.conventionalcommits.org/). Squash or rebase before pushing so the final commits are conventional.
 4. Run the quality gates locally:
    - `cargo fmt`
    - `cargo clippy --all-targets --all-features`
@@ -28,7 +24,7 @@ All changes enter the codebase via pull requests. Direct pushes to `main` or `de
    - `cargo test --all --all-features --locked`
    - `shellcheck scripts/install.sh`
    - `pwsh -NoProfile -Command "Set-ExecutionPolicy -Scope Process Bypass -Force; Import-Module PSScriptAnalyzer; Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Recurse -Severity Error"`
-5. Push your branch and open a pull request targeting `develop`.
+5. Push your branch and open a pull request targeting `develop`. The PR title must follow the Conventional Commit format; CI enforces this rule.
 6. Ensure the GitHub Actions CI checks are green and request review.
 
 ### Pull request guidelines
@@ -42,12 +38,14 @@ All changes enter the codebase via pull requests. Direct pushes to `main` or `de
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please).
 
-1. When `develop` is stable, maintainers create a PR from `develop` into `main` (merging with "merge commit" to preserve individual commits).
-2. A successful merge into `main` triggers the "Release Please" workflow, which opens an automated release PR (`chore: release x.y.z`). This PR bumps crate versions, updates `CHANGELOG.md`, and prepares tags.
-3. After review, maintainers merge the release PR. release-please creates the git tag and GitHub Release, which in turn triggers `Release` workflow to publish binaries for Linux, macOS, and Windows.
-4. Finally, merge the release PR back into `develop` (usually by fast-forwarding `develop` to `main`) to keep branches in sync.
+1. Every push to `develop` runs `Promote Develop to Main`, which fast-forwards `main` to the same commit (failures require a maintainer to resolve divergences).
+2. Each push to `main` triggers `Release Please`. As soon as at least one user-facing Conventional Commit (`feat`, `fix`, `docs`, `chore`, `ci`, `refactor`, `build`, `style`, `test`, `revert`, `hotfix`) lands, release-please opens a release PR (`chore(main): release x.y.z`).
+3. Review and merge the release PR. release-please creates the git tag and GitHub Release, which starts the `Release` workflow to publish binaries for Linux, macOS, and Windows.
+4. The `Sync Release Back to Develop` workflow fast-forwards `develop` after a release commit so both branches stay aligned.
 
 > **Maintainers:** The `Release Please` workflow requires a classic personal access token (PAT) with `repo` scope stored as the `RELEASE_PLEASE_TOKEN` secret. This bypasses GitHub's restriction on workflows creating pull requests. Generate the PAT from your account and add it under *Settings → Secrets → Actions*.
+>
+> Release detection relies on Conventional Commits; malformed commit messages block releases. Ensure the final commits that land on `develop` (typically via squash merge) follow the format before approval.
 
 ## Development environment
 
@@ -66,8 +64,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 - Enable **Automatically delete head branches** in *Settings → General → Pull Requests* so merged branches disappear automatically (the workflow in this repo also deletes them as a fallback).
 - Add branch protection rules via *Settings → Branches*:
-  - `main`: require pull requests, at least one approval, dismiss stale reviews, require CODEOWNERS review, block force-pushes/deletions, require status checks (`CI`, `Release Please`), and enforce conversation resolution.
-  - `develop`: same as `main`, but status checks can be limited to `CI` if desired.
+- `main`: require status checks (`CI`, `Branch Builds`, `Release Please`), block force-pushes/deletions. Direct PRs should remain disabled; automation pushes fast-forwards only.
+- `develop`: require pull requests, at least one approval, dismiss stale reviews, require CODEOWNERS review, block force-pushes/deletions, require status checks (`CI`, `Branch Builds`), and enforce conversation resolution.
 - Keep workflow permissions at the default of “Read and write” and avoid granting bypass rights except to trusted maintainers.
 
 ## Reporting issues
