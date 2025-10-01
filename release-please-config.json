@@ -2,20 +2,6 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
   "release-type": "rust",
   "include-v-in-tag": true,
-  "changelog-types": [
-    { "type": "feat", "section": "Features" },
-    { "type": "fix", "section": "Bug Fixes" },
-    { "type": "perf", "section": "Performance Improvements" },
-    { "type": "docs", "section": "Documentation", "hidden": false },
-    { "type": "chore", "section": "Chores", "hidden": false },
-    { "type": "ci", "section": "CI", "hidden": false },
-    { "type": "refactor", "section": "Refactors", "hidden": false },
-    { "type": "build", "section": "Build System", "hidden": false },
-    { "type": "style", "section": "Style", "hidden": false },
-    { "type": "test", "section": "Tests", "hidden": false },
-    { "type": "revert", "section": "Reverts", "hidden": false },
-    { "type": "hotfix", "section": "Hotfixes", "hidden": false }
-  ],
   "packages": {
     ".": {
       "component": "ObsyncGit",
