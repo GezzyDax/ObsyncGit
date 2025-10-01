@@ -1,9 +1,6 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
   release:
     types:
       - published
@@ -14,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-release:
+  build-and-upload:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -63,8 +60,7 @@ jobs:
           Copy-Item $binaryPath (Join-Path $dist "obsyncgit.exe") -Force
           Compress-Archive -Path (Join-Path $dist "obsyncgit.exe") -DestinationPath "obsyncgit-${{ matrix.target }}.zip"
 
-      - name: Create GitHub release
+      - name: Upload artifacts to release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
           files: obsyncgit-${{ matrix.target }}.${{ matrix.artifact_ext }}
