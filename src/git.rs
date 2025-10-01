@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
 use tracing::{debug, warn};
@@ -239,6 +240,15 @@ impl GitFacade {
     }
 
     fn run_git(&self, args: &[&str], include_author_env: bool) -> Result<CommandOutput> {
+        self.run_git_inner(args, include_author_env, true)
+    }
+
+    fn run_git_inner(
+        &self,
+        args: &[&str],
+        include_author_env: bool,
+        allow_retry: bool,
+    ) -> Result<CommandOutput> {
         debug!(cmd = ?args, "running git command");
         let mut cmd = Command::new(&self.executable);
         cmd.current_dir(&self.repo_path)
@@ -281,6 +291,22 @@ impl GitFacade {
 
         if !output.status.success() {
             let code = output.status.code().unwrap_or(-1);
+            let mut combined = stderr.clone();
+            if combined.trim().is_empty() && !stdout.trim().is_empty() {
+                combined = stdout.clone();
+            }
+
+            if allow_retry && combined.contains("index.lock") {
+                match self.clear_stale_index_lock() {
+                    Ok(true) => {
+                        warn!("stale git index.lock detected, retrying command after cleanup");
+                        return self.run_git_inner(args, include_author_env, false);
+                    }
+                    Ok(false) => {}
+                    Err(err) => warn!(?err, "failed to inspect index.lock after git error"),
+                }
+            }
+
             return Err(anyhow!(
                 "git {} failed with code {}: {}{}",
                 join_args(args),
@@ -299,6 +325,42 @@ impl GitFacade {
         }
 
         Ok(CommandOutput { stdout, stderr })
+    }
+
+    fn clear_stale_index_lock(&self) -> Result<bool> {
+        use std::fs;
+
+        let lock_path = self.repo_path.join(".git/index.lock");
+        if !lock_path.exists() {
+            return Ok(false);
+        }
+
+        let metadata = match fs::metadata(&lock_path) {
+            Ok(data) => data,
+            Err(err) => {
+                warn!(?err, path = %lock_path.display(), "failed to read index.lock metadata");
+                return Ok(false);
+            }
+        };
+
+        let is_stale = metadata
+            .modified()
+            .and_then(|t| t.elapsed())
+            .map(|elapsed| elapsed > Duration::from_secs(30))
+            .unwrap_or(true);
+
+        if !is_stale {
+            return Ok(false);
+        }
+
+        fs::remove_file(&lock_path).with_context(|| {
+            format!(
+                "failed to remove stale index.lock at {}",
+                lock_path.display()
+            )
+        })?;
+        warn!(path = %lock_path.display(), "removed stale git index.lock");
+        Ok(true)
     }
 }
 
