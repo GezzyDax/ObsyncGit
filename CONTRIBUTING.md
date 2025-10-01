@@ -45,7 +45,9 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 > **Maintainers:** The `Release Please` workflow requires a classic personal access token (PAT) with `repo` scope stored as the `RELEASE_PLEASE_TOKEN` secret. This bypasses GitHub's restriction on workflows creating pull requests. Generate the PAT from your account and add it under *Settings → Secrets → Actions*.
 >
+
 > Release detection relies on Conventional Commits; malformed commit messages block releases. Ensure the final commits that land on `develop` (typically via squash merge) follow the format before approval.
+
 
 ## Development environment
 
