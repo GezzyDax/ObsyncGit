@@ -48,9 +48,6 @@ jobs:
       - name: Lint shell installer
         run: shellcheck scripts/install.sh
 
-      - name: Setup PowerShell
-        uses: actions/setup-pwsh@v2
-
       - name: Install PSScriptAnalyzer
         shell: pwsh
         run: Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
