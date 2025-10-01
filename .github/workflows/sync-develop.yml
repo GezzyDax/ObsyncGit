@@ -11,7 +11,7 @@ permissions:
 jobs:
   fast-forward-develop:
     name: Fast-forward develop from main
-    if: startsWith(github.event.head_commit.message, 'chore(main): release')
+    if: ${{ startsWith(github.event.head_commit.message, 'chore(main): release') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
