@@ -343,11 +343,27 @@ impl GitFacade {
             }
         };
 
-        let is_stale = metadata
-            .modified()
-            .and_then(|t| t.elapsed())
-            .map(|elapsed| elapsed > Duration::from_secs(30))
-            .unwrap_or(true);
+        let is_stale = match metadata.modified() {
+            Ok(modified) => match modified.elapsed() {
+                Ok(elapsed) => elapsed > Duration::from_secs(30),
+                Err(err) => {
+                    warn!(
+                        ?err,
+                        path = %lock_path.display(),
+                        "failed to compute index.lock age; treating as stale"
+                    );
+                    true
+                }
+            },
+            Err(err) => {
+                warn!(
+                    ?err,
+                    path = %lock_path.display(),
+                    "failed to read index.lock modification time"
+                );
+                true
+            }
+        };
 
         if !is_stale {
             return Ok(false);
