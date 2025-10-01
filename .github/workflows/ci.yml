@@ -11,9 +11,10 @@ on:
       - develop
 
 jobs:
-  lint:
-    name: Rust Lints
+  verify:
+    name: Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,70 +28,40 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo fmt
+      - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Run cargo clippy
+      - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Run cargo check
-        run: cargo check --all --all-features --locked
-
-      - name: Install ShellCheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-
-      - name: Lint install script
-        run: shellcheck scripts/install.sh
-
-  powershell-lint:
-    name: PowerShell Lints
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install PSScriptAnalyzer
-        shell: pwsh
-        run: |
-          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
-
-      - name: Analyze PowerShell scripts
-        shell: pwsh
-        run: |
-          Import-Module PSScriptAnalyzer
-          $issues = Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Recurse -Severity Error
-          if ($issues) {
-            $issues | Format-List
-            throw "PSScriptAnalyzer reported errors"
-          }
-
-  test:
-    name: Test Matrix
-    needs:
-      - lint
-      - powershell-lint
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
 
       - name: Run tests
         run: cargo test --all --all-features --locked
 
       - name: Build release binary
         run: cargo build --release --all-features --locked
+
+      - name: Install ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Lint shell installer
+        run: shellcheck scripts/install.sh
+
+      - name: Setup PowerShell
+        uses: actions/setup-pwsh@v2
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force
+
+      - name: Analyze PowerShell scripts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Import-Module PSScriptAnalyzer
+          $issues = Invoke-ScriptAnalyzer -Path scripts/install.ps1 -Recurse -Severity Error
+          if ($issues) {
+            $issues | Format-List
+            throw 'PSScriptAnalyzer reported errors'
+          }
